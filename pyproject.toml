@@ -29,9 +29,9 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/unknown/mongoclasses#readme"
-Issues = "https://github.com/unknown/mongoclasses/issues"
-Source = "https://github.com/unknown/mongoclasses"
+Documentation = "https://github.com/rykroon/mongoclasses#readme"
+Issues = "https://github.com/rykroon/mongoclasses/issues"
+Source = "https://github.com/rykroon/mongoclasses"
 
 [tool.hatch.version]
 path = "src/mongoclasses/__about__.py"
