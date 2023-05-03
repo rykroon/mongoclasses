@@ -41,8 +41,8 @@ def test_mongoclass_creation(database):
     class Foo:
         _id: ObjectId | None = None
     
-    assert Foo.__mongomini_collection__.database == database
-    assert Foo.__mongomini_collection__.name == 'foo'
+    assert Foo.__mongoclasses_collection__.database == database
+    assert Foo.__mongoclasses_collection__.name == 'foo'
 
 
 def test_mongoclass_collection_name(database):
@@ -50,7 +50,7 @@ def test_mongoclass_collection_name(database):
     class Foo:
         _id: ObjectId | None = None
     
-    assert Foo.__mongomini_collection__.name == 'foobar'
+    assert Foo.__mongoclasses_collection__.name == 'foobar'
 
 
 def test_database_inheritance(database):
@@ -63,8 +63,8 @@ def test_database_inheritance(database):
     class Bar(Foo):
         ...
 
-    assert Foo.__mongomini_collection__.database == database
-    assert Bar.__mongomini_collection__.database == database
+    assert Foo.__mongoclasses_collection__.database == database
+    assert Bar.__mongoclasses_collection__.database == database
 
 
 @pytest.mark.asyncio

@@ -4,7 +4,7 @@ from functools import lru_cache
 
 from motor.motor_asyncio import AsyncIOMotorCursor, AsyncIOMotorDatabase
 
-_COLLECTION = "__mongomini_collection__"
+_COLLECTION = "__mongoclasses_collection__"
 
 
 _MONGOCLASS_INSTANCE_REQUIRED = "Must be called with a mongoclass instance."
