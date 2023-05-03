@@ -8,6 +8,7 @@ _COLLECTION = "__mongoclasses_collection__"
 
 
 _MONGOCLASS_INSTANCE_REQUIRED = "Must be called with a mongoclass instance."
+_MONGOCLASS_TYPE_REQUIRED = "Must be called with a mongoclass type."
 
 
 def mongoclass(
@@ -34,7 +35,7 @@ def _process_class(cls, db, collection_name, **kwargs):
     # get parent db if db is None.
     if db is None:
         for base in reversed(cls.mro()):
-            if not is_mongoclass(base):
+            if not _is_mongoclass_type(base):
                 continue
             db = getattr(base, _COLLECTION)
 
@@ -56,8 +57,8 @@ def is_mongoclass(obj):
     return hasattr(cls, _COLLECTION)
 
 
-def _is_mongoclass_strict(obj):
-    ...
+def _is_mongoclass_type(obj):
+    return hasattr(obj, _COLLECTION) and isinstance(obj, type)
 
 
 def _is_mongoclass_instance(obj):
@@ -136,8 +137,8 @@ async def find_one(cls, query):
     """
     Return a single instance that matches the query on the mongoclass or None.
     """
-    if not is_mongoclass(cls):
-        raise TypeError("Must be called with a mongoclass type or instance.")
+    if not _is_mongoclass_type(cls):
+        raise TypeError(_MONGOCLASS_TYPE_REQUIRED)
 
     collection = getattr(cls, _COLLECTION)
     return await collection.find_one(query)
@@ -148,8 +149,8 @@ def find(cls, query) -> AsyncIOMotorCursor:
     Performs a query on the mongoclass.
     Returns a DocumentCursor.
     """
-    if not is_mongoclass(cls):
-        raise TypeError("Must be called with a mongoclass type or instance.")
+    if not _is_mongoclass_type(cls):
+        raise TypeError(_MONGOCLASS_TYPE_REQUIRED)
 
     collection = getattr(cls, _COLLECTION)
     return collection.find(filter=query)
@@ -171,8 +172,8 @@ def fromdict(cls, data: dict):
     """
     Attempts to create an instance of a mongoclass from a dictionary.
     """
-    if not is_mongoclass(cls):
-        raise TypeError("Must be called with a mongoclass type or instance.")
+    if not _is_mongoclass_type(cls):
+        raise TypeError(_MONGOCLASS_TYPE_REQUIRED)
 
     init_fields, non_init_fields = _get_init_and_non_init_fields(cls)
     init_kwargs = {f: data[f] for f in init_fields if f in data}
