@@ -1,7 +1,10 @@
+from dataclasses import dataclass
+
 from bson import ObjectId
 import pytest
 import pytest_asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
+
 from mongoclasses import (
     mongoclass, insert_one, update_one, delete_one, find_one, find, fromdict
 )
@@ -37,9 +40,20 @@ def test_mongoclass_creation(database):
         class Foo:
             ...
 
+    # Valid mongoclass
     @mongoclass(db=database)
     class Foo:
         _id: ObjectId | None = None
+    
+    assert Foo.__mongoclasses_collection__.database == database
+    assert Foo.__mongoclasses_collection__.name == 'foo'
+
+    # Mongoclass being created from an already existing dataclass.
+    @dataclass
+    class Foo:
+        _id: ObjectId | None = None
+    
+    Foo = mongoclass(db=database)(Foo)
     
     assert Foo.__mongoclasses_collection__.database == database
     assert Foo.__mongoclasses_collection__.name == 'foo'

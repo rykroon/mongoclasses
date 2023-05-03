@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterable
-from dataclasses import asdict, dataclass, fields
+from dataclasses import asdict, dataclass, fields, is_dataclass
 from functools import lru_cache
 
 from motor.motor_asyncio import AsyncIOMotorCursor, AsyncIOMotorDatabase
@@ -20,7 +20,7 @@ def mongoclass(
     **kwargs,
 ):
     def wrap(cls):
-        return _process_class(cls, db, collection_name, **kwargs)
+        return _process_class(cls, db, collection_name, kwargs)
 
     # See if we're being called as @dataclass or @dataclass().
     if cls is None:
@@ -31,7 +31,12 @@ def mongoclass(
     return wrap(cls)
 
 
-def _process_class(cls, db, collection_name, **kwargs):
+def _process_class(cls, db, collection_name, dataclass_kwargs):
+
+    # If the class is not a dataclass, make it a dataclass.
+    if not is_dataclass(cls):
+        cls = dataclass(**dataclass_kwargs)(cls)
+
     # get parent db if db is None.
     if db is None:
         for base in reversed(cls.mro()):
@@ -43,9 +48,8 @@ def _process_class(cls, db, collection_name, **kwargs):
     collection_name = collection_name or cls.__name__.lower()
     collection = db[collection_name]
     setattr(cls, _COLLECTION, collection)
-    new_cls = dataclass(**kwargs)(cls)
-    assert any(f.name == "_id" for f in fields(new_cls)), "Missing '_id' field."
-    return new_cls
+    assert any(f.name == "_id" for f in fields(cls)), "Missing '_id' field."
+    return cls
 
 
 def is_mongoclass(obj):
