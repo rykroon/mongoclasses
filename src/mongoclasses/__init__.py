@@ -37,6 +37,8 @@ def _process_class(cls, db, collection_name, dataclass_kwargs):
     if not is_dataclass(cls):
         cls = dataclass(**dataclass_kwargs)(cls)
 
+    assert any(f.name == "_id" for f in fields(cls)), "Missing '_id' field."
+
     # get parent db if db is None.
     if db is None:
         for base in reversed(cls.mro()):
@@ -45,10 +47,10 @@ def _process_class(cls, db, collection_name, dataclass_kwargs):
             db = getattr(base, _COLLECTION)
 
     assert db is not None, "A database is required."
+
     collection_name = collection_name or cls.__name__.lower()
     collection = db[collection_name]
     setattr(cls, _COLLECTION, collection)
-    assert any(f.name == "_id" for f in fields(cls)), "Missing '_id' field."
     return cls
 
 
