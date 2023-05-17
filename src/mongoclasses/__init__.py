@@ -1,14 +1,111 @@
 from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass, fields, is_dataclass
-from functools import lru_cache
+import inspect
 
-from motor.motor_asyncio import AsyncIOMotorCursor, AsyncIOMotorDatabase
+from motor.motor_asyncio import (
+    AsyncIOMotorCollection,
+    AsyncIOMotorCursor,
+    AsyncIOMotorDatabase,
+)
+from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
+
+
+__all__ = [...]
 
 _COLLECTION = "__mongoclasses_collection__"
 
 
-_MONGOCLASS_INSTANCE_REQUIRED = "Must be called with a mongoclass instance."
-_MONGOCLASS_TYPE_REQUIRED = "Must be called with a mongoclass type."
+def fromdict(cls, data: dict):
+    """
+    Attempts to create a dataclass instance from a dictionary.
+    """
+    if not is_dataclass(cls):
+        raise TypeError("Object must be a dataclass type.")
+
+    if not inspect.isclass(cls):
+        raise TypeError("Object must be a dataclass type.")
+
+    sig = inspect.signature(cls)
+    param_names = (param for param in sig.parameters)
+    init_kwargs = {param: data[param] for param in param_names if param in data}
+    obj = cls(**init_kwargs)
+
+    field_names = set(f.name for f in fields(cls))
+    non_init_fields = field_names.difference(param_names)
+
+    for field in non_init_fields:
+        if field not in data:
+            continue
+        setattr(obj, field, data[field])
+
+    return obj
+
+
+def include(fields: list[str]) -> Callable[[Iterable], dict]:
+    """
+    Returns a dict_factory that will include the fields.
+    """
+
+    def include_dict_factory(iterable: Iterable) -> dict:
+        return {k: v for k, v in iterable if k in fields}
+
+    return include_dict_factory
+
+
+async def insert_one(
+    obj, /, using: AsyncIOMotorCollection | AsyncIOMotorDatabase
+) -> InsertOneResult:
+    if not is_dataclass(obj):
+        raise TypeError("Object must be a dataclass.")
+
+    if inspect.isclass(obj):
+        raise TypeError("Object must be an instance of a dataclass.")
+
+    if isinstance(using, AsyncIOMotorDatabase):
+        using = using[obj.__class__.__name__.lower()]
+
+    document = asdict(obj)
+    if document["_id"] is None:
+        del document["_id"]
+
+    result = await using.insert_one(document)
+    obj._id = result.inserted_id
+    return result
+
+
+async def update_one(
+    obj,
+    /,
+    using: AsyncIOMotorCollection | AsyncIOMotorDatabase,
+    fields: list[str] | None = None,
+) -> UpdateResult:
+    if not is_dataclass(obj):
+        raise TypeError("Object must be a dataclass.")
+
+    if inspect.isclass(obj):
+        raise TypeError("Object must be an instance of a dataclass.")
+
+    if isinstance(using, AsyncIOMotorDatabase):
+        using = using[obj.__class__.__name__.lower()]
+
+    dict_factory = include(fields) if fields else dict
+    document = asdict(obj, dict_factory=dict_factory)
+    return await using.update_one(filter={"_id": obj._id}, update={"$set": document})
+
+
+async def delete_one(
+    obj, /, using: AsyncIOMotorCollection | AsyncIOMotorDatabase
+) -> DeleteResult:
+    if not is_dataclass(obj):
+        raise TypeError("Object must be a dataclass.")
+
+    if inspect.isclass(obj):
+        raise TypeError("Object must be an instance of a dataclass.")
+
+    if isinstance(using, AsyncIOMotorDatabase):
+        using = using[obj.__class__.__name__.lower()]
+
+    return await using.delete_one({"_id": obj._id})
 
 
 def mongoclass(
@@ -32,7 +129,6 @@ def mongoclass(
 
 
 def _process_class(cls, db, collection_name, dataclass_kwargs):
-
     # If the class is not a dataclass, make it a dataclass.
     if not is_dataclass(cls):
         cls = dataclass(**dataclass_kwargs)(cls)
@@ -74,77 +170,12 @@ def _is_mongoclass_instance(obj):
     return hasattr(type(obj), _COLLECTION)
 
 
-def include(*fields: str) -> Callable[[Iterable], dict]:
-    """
-    Returns a dict_factory that will include the fields.
-    """
-
-    def include_dict_factory(iterable: Iterable) -> dict:
-        return {k: v for k, v in iterable if k in fields}
-
-    return include_dict_factory
-
-
-def exclude(*fields: str) -> Callable[[Iterable], dict]:
-    """
-    Returns a dict_factory that will exclude the fields.
-    """
-
-    def exclude_dict_factory(iterable: Iterable) -> dict:
-        return {k: v for k, v in iterable if k not in fields}
-
-    return exclude_dict_factory
-
-
-async def insert_one(obj, /):
-    """
-    Insert an instance of a mongoclass into its collection.
-    """
-    if not _is_mongoclass_instance(obj):
-        raise TypeError(_MONGOCLASS_INSTANCE_REQUIRED)
-
-    document = asdict(obj)
-    if document["_id"] is None:
-        del document["_id"]
-
-    collection = getattr(obj, _COLLECTION)
-    result = await collection.insert_one(document)
-    obj._id = result.inserted_id
-    return result
-
-
-async def update_one(obj, /, *fields):
-    """
-    Update an instance of a mongoclass.
-    """
-    if not _is_mongoclass_instance(obj):
-        raise TypeError()
-
-    dict_factory = include(*fields) if fields else dict
-    document = asdict(obj, dict_factory=dict_factory)
-    collection = getattr(obj, _COLLECTION)
-    return await collection.update_one(
-        filter={"_id": obj._id}, update={"$set": document}
-    )
-
-
-async def delete_one(obj, /):
-    """
-    Delete an instance of a mongoclass from the Collection.
-    """
-    if not _is_mongoclass_instance(obj):
-        raise TypeError(_MONGOCLASS_INSTANCE_REQUIRED)
-
-    collection = getattr(obj, _COLLECTION)
-    return await collection.delete_one({"_id": obj._id})
-
-
 async def find_one(cls, query):
     """
     Return a single instance that matches the query on the mongoclass or None.
     """
     if not _is_mongoclass_type(cls):
-        raise TypeError(_MONGOCLASS_TYPE_REQUIRED)
+        raise TypeError("Must be called with a mongoclass type.")
 
     collection = getattr(cls, _COLLECTION)
     return await collection.find_one(query)
@@ -156,38 +187,7 @@ def find(cls, query) -> AsyncIOMotorCursor:
     Returns a DocumentCursor.
     """
     if not _is_mongoclass_type(cls):
-        raise TypeError(_MONGOCLASS_TYPE_REQUIRED)
+        raise TypeError("Must be called with a mongoclass type.")
 
     collection = getattr(cls, _COLLECTION)
     return collection.find(filter=query)
-
-
-@lru_cache
-def _get_init_and_non_init_fields(cls: type) -> tuple[list[str], list[str]]:
-    init_fields = []
-    non_init_fields = []
-    for field in fields(cls):
-        if field.init:
-            init_fields.append(field.name)
-        else:
-            non_init_fields.append(field.name)
-    return init_fields, non_init_fields
-
-
-def fromdict(cls, data: dict):
-    """
-    Attempts to create an instance of a mongoclass from a dictionary.
-    """
-    if not _is_mongoclass_type(cls):
-        raise TypeError(_MONGOCLASS_TYPE_REQUIRED)
-
-    init_fields, non_init_fields = _get_init_and_non_init_fields(cls)
-    init_kwargs = {f: data[f] for f in init_fields if f in data}
-    obj = cls(**init_kwargs)
-
-    for field in non_init_fields:
-        if field not in data:
-            continue
-        setattr(obj, field, data[field])
-
-    return obj
