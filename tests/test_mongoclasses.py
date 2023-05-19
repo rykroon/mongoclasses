@@ -35,7 +35,7 @@ def test_mongoclass_creation(database):
             _id: ObjectId | None = None
 
     # Missing an _id field.
-    with pytest.raises(AssertionError):
+    with pytest.raises(AttributeError):
         @mongoclass(db=database)
         class Foo:
             ...
