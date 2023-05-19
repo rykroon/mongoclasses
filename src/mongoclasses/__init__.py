@@ -2,11 +2,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass, fields, is_dataclass
 import inspect
 
-from motor.motor_asyncio import (
-    AsyncIOMotorCollection,
-    AsyncIOMotorCursor,
-    AsyncIOMotorDatabase,
-)
+from motor.motor_asyncio import AsyncIOMotorCursor, AsyncIOMotorDatabase
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
 
 
@@ -41,7 +37,7 @@ def fromdict(cls, data: dict):
     return obj
 
 
-def include(fields: list[str]) -> Callable[[Iterable], dict]:
+def include(fields: Iterable[str]) -> Callable[[Iterable], dict]:
     """
     Returns a dict_factory that will include the fields.
     """
@@ -50,62 +46,6 @@ def include(fields: list[str]) -> Callable[[Iterable], dict]:
         return {k: v for k, v in iterable if k in fields}
 
     return include_dict_factory
-
-
-async def insert_one(
-    obj, /, using: AsyncIOMotorCollection | AsyncIOMotorDatabase
-) -> InsertOneResult:
-    if not is_dataclass(obj):
-        raise TypeError("Object must be a dataclass.")
-
-    if inspect.isclass(obj):
-        raise TypeError("Object must be an instance of a dataclass.")
-
-    if isinstance(using, AsyncIOMotorDatabase):
-        using = using[obj.__class__.__name__.lower()]
-
-    document = asdict(obj)
-    if document["_id"] is None:
-        del document["_id"]
-
-    result = await using.insert_one(document)
-    obj._id = result.inserted_id
-    return result
-
-
-async def update_one(
-    obj,
-    /,
-    using: AsyncIOMotorCollection | AsyncIOMotorDatabase,
-    fields: list[str] | None = None,
-) -> UpdateResult:
-    if not is_dataclass(obj):
-        raise TypeError("Object must be a dataclass.")
-
-    if inspect.isclass(obj):
-        raise TypeError("Object must be an instance of a dataclass.")
-
-    if isinstance(using, AsyncIOMotorDatabase):
-        using = using[obj.__class__.__name__.lower()]
-
-    dict_factory = include(fields) if fields else dict
-    document = asdict(obj, dict_factory=dict_factory)
-    return await using.update_one(filter={"_id": obj._id}, update={"$set": document})
-
-
-async def delete_one(
-    obj, /, using: AsyncIOMotorCollection | AsyncIOMotorDatabase
-) -> DeleteResult:
-    if not is_dataclass(obj):
-        raise TypeError("Object must be a dataclass.")
-
-    if inspect.isclass(obj):
-        raise TypeError("Object must be an instance of a dataclass.")
-
-    if isinstance(using, AsyncIOMotorDatabase):
-        using = using[obj.__class__.__name__.lower()]
-
-    return await using.delete_one({"_id": obj._id})
 
 
 def mongoclass(
@@ -133,14 +73,15 @@ def _process_class(cls, db, collection_name, dataclass_kwargs):
     if not is_dataclass(cls):
         cls = dataclass(**dataclass_kwargs)(cls)
 
-    assert any(f.name == "_id" for f in fields(cls)), "Missing '_id' field."
+    if not any(f.name == "_id" for f in fields(cls)):
+        raise AttributeError("Missing '_id' field.")
 
     # get parent db if db is None.
     if db is None:
         for base in reversed(cls.mro()):
             if not _is_mongoclass_type(base):
                 continue
-            db = getattr(base, _COLLECTION)
+            db = getattr(base, _COLLECTION).database
 
     assert db is not None, "A database is required."
 
@@ -155,12 +96,12 @@ def is_mongoclass(obj):
     Returns True if the obj is a a mongoclass or an instance of
     a mongoclass.
     """
-    cls = obj if isinstance(obj, type) else type(obj)
+    cls = obj if inspect.isclass(obj) else type(obj)
     return hasattr(cls, _COLLECTION)
 
 
 def _is_mongoclass_type(obj):
-    return hasattr(obj, _COLLECTION) and isinstance(obj, type)
+    return hasattr(obj, _COLLECTION) and inspect.isclass(obj)
 
 
 def _is_mongoclass_instance(obj):
@@ -168,6 +109,40 @@ def _is_mongoclass_instance(obj):
     Returns True if the obj is an instance of a mongoclass.
     """
     return hasattr(type(obj), _COLLECTION)
+
+
+async def insert_one(obj, /) -> InsertOneResult:
+    if not _is_mongoclass_instance(obj):
+        raise TypeError("Object must be a mongoclass instance.")
+
+    document = asdict(obj)
+    if document["_id"] is None:
+        del document["_id"]
+
+    collection = getattr(obj, _COLLECTION)
+    result = await collection.insert_one(document)
+    obj._id = result.inserted_id
+    return result
+
+
+async def update_one(obj, /, fields: Iterable[str] | None = None) -> UpdateResult:
+    if not _is_mongoclass_instance(obj):
+        raise TypeError("Object must be a mongoclass instance.")
+
+    dict_factory = include(fields) if fields else dict
+    document = asdict(obj, dict_factory=dict_factory)
+    collection = getattr(obj, _COLLECTION)
+    return await collection.update_one(
+        filter={"_id": obj._id}, update={"$set": document}
+    )
+
+
+async def delete_one(obj, /) -> DeleteResult:
+    if not _is_mongoclass_instance(obj):
+        raise TypeError("Object must be a mongoclass instance.")
+
+    collection = getattr(obj, _COLLECTION)
+    return await collection.delete_one({"_id": obj._id})
 
 
 async def find_one(cls, query):
