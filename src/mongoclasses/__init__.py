@@ -154,7 +154,10 @@ async def find_one(cls, query):
         raise TypeError("Must be called with a mongoclass type.")
 
     collection = getattr(cls, _COLLECTION)
-    return await collection.find_one(query)
+    document = await collection.find_one(query)
+    if document is None:
+        return None
+    return fromdict(cls, document)
 
 
 def find(cls, query) -> AsyncIOMotorCursor:

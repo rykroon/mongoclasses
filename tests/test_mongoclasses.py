@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 from bson import ObjectId
 import pytest
@@ -118,7 +118,7 @@ async def test_find_one(Foo):
 
     # Find document that exists
     result = await find_one(Foo, {'_id': f._id})
-    assert result['_id'] == f._id
+    assert result._id == f._id
 
     # find document that does not exist.
     result = await find_one(Foo, {'_id': "abcdef"})
@@ -147,11 +147,7 @@ async def test_find(Foo, database):
 @pytest.mark.asyncio
 async def test_fromdict(Foo):
     f1 = Foo()
-    await insert_one(f1)
-
-    data = await find_one(Foo, {'_id': f1._id})
-    f2 = fromdict(Foo, data)
-
+    f2 = fromdict(Foo, asdict(f1))
     assert f1 == f2
 
 
