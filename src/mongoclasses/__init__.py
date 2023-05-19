@@ -6,7 +6,17 @@ from motor.motor_asyncio import AsyncIOMotorCursor, AsyncIOMotorDatabase
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
 
 
-__all__ = [...]
+__all__ = [
+    "fromdict",
+    "include",
+    "mongoclass",
+    "is_mongoclass",
+    "insert_one",
+    "update_one",
+    "delete_one",
+    "find_one",
+    "find"
+]
 
 _COLLECTION = "__mongoclasses_collection__"
 
