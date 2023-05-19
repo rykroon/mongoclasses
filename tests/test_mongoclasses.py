@@ -29,7 +29,7 @@ def Foo(database):
 
 def test_mongoclass_creation(database):
     # Missing a database.
-    with pytest.raises(AssertionError):
+    with pytest.raises(RuntimeError):
         @mongoclass
         class Foo:
             _id: ObjectId | None = None

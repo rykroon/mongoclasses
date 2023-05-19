@@ -83,7 +83,8 @@ def _process_class(cls, db, collection_name, dataclass_kwargs):
                 continue
             db = getattr(base, _COLLECTION).database
 
-    assert db is not None, "A database is required."
+    if db is None:
+        raise RuntimeError("A database is required.")
 
     collection_name = collection_name or cls.__name__.lower()
     collection = db[collection_name]
