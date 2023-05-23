@@ -32,17 +32,17 @@ def fromdict(cls, data: dict):
         raise TypeError("Object must be a dataclass type.")
 
     sig = inspect.signature(cls)
-    param_names = (param for param in sig.parameters)
-    init_kwargs = {param: data[param] for param in param_names if param in data}
+    init_kwargs = {param: data[param] for param in sig.parameters if param in data}
     obj = cls(**init_kwargs)
 
-    field_names = set(f.name for f in fields(cls))
-    non_init_fields = field_names.difference(param_names)
-
-    for field in non_init_fields:
-        if field not in data:
+    for field in fields(cls):
+        if field.name in sig.parameters:
             continue
-        setattr(obj, field, data[field])
+
+        if field.name not in data:
+            continue
+
+        setattr(obj, field.name, data[field.name])
 
     return obj
 
