@@ -1,6 +1,7 @@
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Container, Iterable
 from dataclasses import asdict, dataclass, fields, is_dataclass
 import inspect
+from typing import Any
 
 from motor.motor_asyncio import AsyncIOMotorCursor, AsyncIOMotorDatabase
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
@@ -15,13 +16,13 @@ __all__ = [
     "update_one",
     "delete_one",
     "find_one",
-    "find"
+    "find",
 ]
 
 _COLLECTION = "__mongoclasses_collection__"
 
 
-def fromdict(cls, data: dict):
+def fromdict(cls, data: dict[str, Any]):
     """
     Attempts to create a dataclass instance from a dictionary.
     """
@@ -33,7 +34,8 @@ def fromdict(cls, data: dict):
 
     sig = inspect.signature(cls)
     init_kwargs = {param: data[param] for param in sig.parameters if param in data}
-    obj = cls(**init_kwargs)
+    ba = sig.bind(**init_kwargs)
+    obj = cls(*ba.args, **ba.kwargs)
 
     for field in fields(cls):
         if field.name in sig.parameters:
@@ -47,12 +49,14 @@ def fromdict(cls, data: dict):
     return obj
 
 
-def include(fields: Iterable[str]) -> Callable[[Iterable], dict]:
+def include(
+    fields: Container[str],
+) -> Callable[[Iterable[tuple[str, Any]]], dict[str, Any]]:
     """
     Returns a dict_factory that will include the fields.
     """
 
-    def include_dict_factory(iterable: Iterable) -> dict:
+    def include_dict_factory(iterable: Iterable[tuple[str, Any]]) -> dict[str, Any]:
         return {k: v for k, v in iterable if k in fields}
 
     return include_dict_factory
@@ -78,7 +82,12 @@ def mongoclass(
     return wrap(cls)
 
 
-def _process_class(cls, db, collection_name, dataclass_kwargs):
+def _process_class(
+    cls,
+    db: AsyncIOMotorDatabase,
+    collection_name: str,
+    dataclass_kwargs: dict[str, Any],
+):
     # If the class is not a dataclass, make it a dataclass.
     if not is_dataclass(cls):
         cls = dataclass(**dataclass_kwargs)(cls)
@@ -140,7 +149,7 @@ async def update_one(obj, /, fields: Iterable[str] | None = None) -> UpdateResul
     if not _is_mongoclass_instance(obj):
         raise TypeError("Object must be a mongoclass instance.")
 
-    dict_factory = include(fields) if fields else dict
+    dict_factory = include(fields) if fields is not None else dict
     document = asdict(obj, dict_factory=dict_factory)
     collection = getattr(obj, _COLLECTION)
     return await collection.update_one(

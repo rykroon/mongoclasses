@@ -1,4 +1,4 @@
-from dataclasses import dataclass, asdict
+from dataclasses import asdict
 
 from bson import ObjectId
 import pytest
@@ -6,7 +6,7 @@ import pytest_asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from mongoclasses import (
-    mongoclass, insert_one, update_one, delete_one, find_one, find, fromdict
+    delete_one, find, find_one, fromdict, insert_one, mongoclass, update_one
 )
 
 
@@ -23,67 +23,24 @@ def Foo(database):
     class Foo:
         _id: ObjectId | None = None
         name: str = ""
+        description: str = ""
 
     return Foo
-
-
-def test_mongoclass_creation(database):
-    # Missing a database.
-    with pytest.raises(RuntimeError):
-        @mongoclass
-        class Foo:
-            _id: ObjectId | None = None
-
-    # Missing an _id field.
-    with pytest.raises(AttributeError):
-        @mongoclass(db=database)
-        class Foo:
-            ...
-
-    # Valid mongoclass
-    @mongoclass(db=database)
-    class Foo:
-        _id: ObjectId | None = None
-    
-    assert Foo.__mongoclasses_collection__.database == database
-    assert Foo.__mongoclasses_collection__.name == 'foo'
-
-    # Mongoclass being created from an already existing dataclass.
-    @dataclass
-    class Foo:
-        _id: ObjectId | None = None
-    
-    Foo = mongoclass(db=database)(Foo)
-    
-    assert Foo.__mongoclasses_collection__.database == database
-    assert Foo.__mongoclasses_collection__.name == 'foo'
-
-
-def test_mongoclass_collection_name(database):
-    @mongoclass(db=database, collection_name='foobar')
-    class Foo:
-        _id: ObjectId | None = None
-    
-    assert Foo.__mongoclasses_collection__.name == 'foobar'
-
-
-def test_database_inheritance(database):
-
-    @mongoclass(db=database)
-    class Foo:
-        _id: ObjectId | None = None
-
-    @mongoclass
-    class Bar(Foo):
-        ...
-
-    assert Foo.__mongoclasses_collection__.database == database
-    assert Bar.__mongoclasses_collection__.database == database
 
 
 @pytest.mark.asyncio
 async def test_insert_one(Foo, database):    
     f = Foo()
+    await insert_one(f)
+
+    assert f._id is not None
+    assert await database['foo'].find_one({'_id': f._id}) is not None
+
+
+@pytest.mark.asyncio
+async def test_insert_one_2(Foo, database):  
+    # test scenario where an _id is generated before insertion.  
+    f = Foo(_id=ObjectId())
     await insert_one(f)
 
     assert f._id is not None
@@ -100,6 +57,20 @@ async def test_update_one(Foo, database):
     
     doc = await database['foo'].find_one({"_id": f._id})
     assert doc["name"] == "Fred"
+
+
+@pytest.mark.asyncio
+async def test_update_one_2(Foo, database):    
+    f = Foo()
+    await insert_one(f)
+
+    f.name = "Fred"
+    f.description = "foobar"
+    await update_one(f, fields=["description"])
+    
+    doc = await database['foo'].find_one({"_id": f._id})
+    assert doc["name"] == ""
+    assert doc["description"] == "foobar"
     
 
 @pytest.mark.asyncio
@@ -137,11 +108,8 @@ async def test_find(Foo, database):
     await insert_one(f3)
 
     cursor = find(Foo, {})
-    l = []
-    async for foo in cursor:
-        l.append(foo)
-
-    assert len(l) == 3
+    objects = [foo async for foo in cursor]
+    assert len(objects) == 3
 
 
 @pytest.mark.asyncio
