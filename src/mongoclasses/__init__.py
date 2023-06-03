@@ -32,31 +32,18 @@ def fromdict(cls, data: dict[str, Any]):
     if not inspect.isclass(cls):
         raise TypeError("Object must be a dataclass type.")
 
-    """
-    Cause technically fromdict() can make sense outside the context of MongoDB.
-
-    So in conclusion I think fromdict should work in the following way...
-    - First, do not assume that ALL of the incoming data came from the database.
-    - extract any fields from the data that are used in the __init__ method.
-        - the best way to do this would be with inspect.signature.
-
-    - And then any other remaining fields in the data that are also included
-        in the dataclass's field can be added via setattr.
-
-"""
-    sig = inspect.signature(cls)
-    init_data = {p: data[p] for p in sig.parameters if p in data}
-    non_init_data = {
-        f.name: data[f.name]
-        for f in fields(cls)
-        if f.name not in sig.parameters and f.name in data
-    }
+    field_names = set(f.name for f in fields(cls))
+    signature = inspect.signature(cls)
+    init_param_names = set(signature.parameters)
+    non_init_field_names = field_names.difference(init_param_names)
 
     # initialize object.
-    ba = sig.bind(**init_data)
+    init_data = {p: data[p] for p in init_param_names if p in data}
+    ba = signature.bind(**init_data)
     obj = cls(*ba.args, **ba.kwargs)
 
     # Add remaining fields (if any) using setattr.
+    non_init_data = {f: data[f] for f in non_init_field_names if f in data}
     for field, value in non_init_data.items():
         setattr(obj, field, value)
 
