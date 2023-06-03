@@ -29,7 +29,7 @@ def Foo(database):
 
 
 @pytest.mark.asyncio
-async def test_insert_one(Foo, database):    
+async def test_insert_one_without_id(Foo, database):    
     f = Foo()
     await insert_one(f)
 
@@ -38,12 +38,13 @@ async def test_insert_one(Foo, database):
 
 
 @pytest.mark.asyncio
-async def test_insert_one_2(Foo, database):  
+async def test_insert_one_with_id(Foo, database):  
     # test scenario where an _id is generated before insertion.  
-    f = Foo(_id=ObjectId())
+    object_id = ObjectId()
+    f = Foo(_id=object_id)
     await insert_one(f)
 
-    assert f._id is not None
+    assert f._id == object_id
     assert await database['foo'].find_one({'_id': f._id}) is not None
 
 
@@ -60,7 +61,7 @@ async def test_update_one(Foo, database):
 
 
 @pytest.mark.asyncio
-async def test_update_one_2(Foo, database):    
+async def test_update_one_with_fields(Foo, database):    
     f = Foo()
     await insert_one(f)
 
