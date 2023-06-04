@@ -1,7 +1,6 @@
-from collections.abc import Callable, Container, Iterable
 from dataclasses import asdict, dataclass, fields, is_dataclass
 import inspect
-from typing import Any
+from typing import Any, Optional
 
 from motor.motor_asyncio import AsyncIOMotorCursor, AsyncIOMotorDatabase
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
@@ -9,7 +8,6 @@ from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
 
 __all__ = [
     "fromdict",
-    "include",
     "mongoclass",
     "is_mongoclass",
     "insert_one",
@@ -50,24 +48,11 @@ def fromdict(cls, data: dict[str, Any]):
     return obj
 
 
-def include(
-    fields: Container[str],
-) -> Callable[[Iterable[tuple[str, Any]]], dict[str, Any]]:
-    """
-    Returns a dict_factory that will include the fields.
-    """
-
-    def include_dict_factory(iterable: Iterable[tuple[str, Any]]) -> dict[str, Any]:
-        return {k: v for k, v in iterable if k in fields}
-
-    return include_dict_factory
-
-
 def mongoclass(
     cls=None,
     /,
     *,
-    db: AsyncIOMotorDatabase | None = None,
+    db: Optional[AsyncIOMotorDatabase] = None,
     collection_name: str = "",
     **kwargs,
 ):
@@ -94,7 +79,7 @@ def _process_class(
         cls = dataclass(**dataclass_kwargs)(cls)
 
     if not any(f.name == "_id" for f in fields(cls)):
-        raise AttributeError("Missing '_id' field.")
+        raise AttributeError("Missing required field '_id'.")
 
     # get parent db if db is None.
     if db is None:
@@ -146,12 +131,14 @@ async def insert_one(obj, /) -> InsertOneResult:
     return result
 
 
-async def update_one(obj, /, fields: Iterable[str] | None = None) -> UpdateResult:
+async def update_one(obj, /, fields: Optional[list[str]] = None) -> UpdateResult:
     if not _is_mongoclass_instance(obj):
         raise TypeError("Object must be a mongoclass instance.")
 
-    dict_factory = include(fields) if fields is not None else dict
-    document = asdict(obj, dict_factory=dict_factory)
+    document = asdict(obj)
+    if fields is not None:
+        document = {k: v for k, v in document.items() if k in fields}
+
     collection = getattr(obj, _COLLECTION)
     return await collection.update_one(
         filter={"_id": obj._id}, update={"$set": document}
