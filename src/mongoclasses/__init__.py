@@ -50,7 +50,6 @@ def fromdict(cls, data: Dict[str, Any]):
 
 def mongoclass(
     cls=None,
-    /,
     *,
     db: Optional[AsyncIOMotorDatabase] = None,
     collection_name: str = "",
@@ -117,7 +116,7 @@ def _is_mongoclass_instance(obj):
     return hasattr(type(obj), _COLLECTION)
 
 
-async def insert_one(obj, /) -> InsertOneResult:
+async def insert_one(obj) -> InsertOneResult:
     if not _is_mongoclass_instance(obj):
         raise TypeError("Object must be a mongoclass instance.")
 
@@ -131,7 +130,7 @@ async def insert_one(obj, /) -> InsertOneResult:
     return result
 
 
-async def update_one(obj, /, fields: Optional[List[str]] = None) -> UpdateResult:
+async def update_one(obj, fields: Optional[List[str]] = None) -> UpdateResult:
     if not _is_mongoclass_instance(obj):
         raise TypeError("Object must be a mongoclass instance.")
 
@@ -145,7 +144,7 @@ async def update_one(obj, /, fields: Optional[List[str]] = None) -> UpdateResult
     )
 
 
-async def delete_one(obj, /) -> DeleteResult:
+async def delete_one(obj) -> DeleteResult:
     if not _is_mongoclass_instance(obj):
         raise TypeError("Object must be a mongoclass instance.")
 
