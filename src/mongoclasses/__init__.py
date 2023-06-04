@@ -1,6 +1,6 @@
 from dataclasses import asdict, dataclass, fields, is_dataclass
 import inspect
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 from motor.motor_asyncio import AsyncIOMotorCursor, AsyncIOMotorDatabase
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
@@ -20,7 +20,7 @@ __all__ = [
 _COLLECTION = "__mongoclasses_collection__"
 
 
-def fromdict(cls, data: dict[str, Any]):
+def fromdict(cls, data: Dict[str, Any]):
     """
     Attempts to create a dataclass instance from a dictionary.
     """
@@ -72,7 +72,7 @@ def _process_class(
     cls,
     db: AsyncIOMotorDatabase,
     collection_name: str,
-    dataclass_kwargs: dict[str, Any],
+    dataclass_kwargs: Dict[str, Any],
 ):
     # If the class is not a dataclass, make it a dataclass.
     if not is_dataclass(cls):
@@ -131,7 +131,7 @@ async def insert_one(obj, /) -> InsertOneResult:
     return result
 
 
-async def update_one(obj, /, fields: Optional[list[str]] = None) -> UpdateResult:
+async def update_one(obj, /, fields: Optional[List[str]] = None) -> UpdateResult:
     if not _is_mongoclass_instance(obj):
         raise TypeError("Object must be a mongoclass instance.")
 
@@ -153,7 +153,7 @@ async def delete_one(obj, /) -> DeleteResult:
     return await collection.delete_one({"_id": obj._id})
 
 
-async def find_one(cls, query: dict[str, Any]):
+async def find_one(cls, query: Dict[str, Any]):
     """
     Return a single instance that matches the query on the mongoclass or None.
     """
@@ -167,7 +167,7 @@ async def find_one(cls, query: dict[str, Any]):
     return fromdict(cls, document)
 
 
-def find(cls, query: dict[str, Any]) -> AsyncIOMotorCursor:
+def find(cls, query: Dict[str, Any]) -> AsyncIOMotorCursor:
     """
     Performs a query on the mongoclass.
     Returns a DocumentCursor.
