@@ -1,4 +1,5 @@
 from dataclasses import asdict
+from typing import Optional
 
 from bson import ObjectId
 import pytest
@@ -21,7 +22,7 @@ async def database():
 def Foo(database):
     @mongoclass(db=database)
     class Foo:
-        _id: ObjectId | None = None
+        _id: Optional[ObjectId] = None
         name: str = ""
         description: str = ""
 

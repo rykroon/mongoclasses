@@ -7,7 +7,7 @@ name = "mongoclasses"
 dynamic = ["version"]
 description = ''
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 license = "MIT"
 keywords = []
 authors = [
@@ -55,7 +55,7 @@ cov = [
 ]
 
 [[tool.hatch.envs.all.matrix]]
-python = ["3.10", "3.11"]
+python = ["3.9", "3.10", "3.11"]
 
 [tool.coverage.run]
 source_pkgs = ["mongoclasses", "tests"]
