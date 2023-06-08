@@ -1,6 +1,8 @@
 from dataclasses import asdict, dataclass, fields, is_dataclass
 import inspect
-from typing import Any, Dict, List, Optional
+from typing import (
+    Any, Callable, Dict, List, Optional, Type, TypeVar, Union
+)
 
 from motor.motor_asyncio import AsyncIOMotorCursor, AsyncIOMotorDatabase
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
@@ -17,10 +19,14 @@ __all__ = [
     "find",
 ]
 
+
+T = TypeVar("T")
+
+
 _COLLECTION = "__mongoclasses_collection__"
 
 
-def fromdict(cls, data: Dict[str, Any]):
+def fromdict(cls: Type[T], data: Dict[str, Any]) -> T:
     """
     Attempts to create a dataclass instance from a dictionary.
     """
@@ -46,13 +52,13 @@ def fromdict(cls, data: Dict[str, Any]):
 
 
 def mongoclass(
-    cls=None,
+    cls: Optional[Type[T]] = None,
     *,
     db: Optional[AsyncIOMotorDatabase] = None,
     collection_name: str = "",
-    **kwargs,
-):
-    def wrap(cls):
+    **kwargs: Any,
+) -> Union[Type[T], Callable[[Type[T]], Type[T]]]:
+    def wrap(cls: Type[T]) -> Type[T]:
         return _process_class(cls, db, collection_name, kwargs)
 
     # See if we're being called as @dataclass or @dataclass().
@@ -65,11 +71,11 @@ def mongoclass(
 
 
 def _process_class(
-    cls,
+    cls: Type[T],
     db: AsyncIOMotorDatabase,
     collection_name: str,
     dataclass_kwargs: Dict[str, Any],
-):
+) -> Type[T]:
     # If the class is not a dataclass, make it a dataclass.
     if not is_dataclass(cls):
         cls = dataclass(**dataclass_kwargs)(cls)
@@ -93,7 +99,7 @@ def _process_class(
     return cls
 
 
-def is_mongoclass(obj):
+def is_mongoclass(obj) -> bool:
     """
     Returns True if the obj is a a mongoclass or an instance of
     a mongoclass.
@@ -102,11 +108,11 @@ def is_mongoclass(obj):
     return hasattr(cls, _COLLECTION)
 
 
-def _is_mongoclass_type(obj):
+def _is_mongoclass_type(obj) -> bool:
     return hasattr(obj, _COLLECTION) and inspect.isclass(obj)
 
 
-def _is_mongoclass_instance(obj):
+def _is_mongoclass_instance(obj) -> bool:
     """
     Returns True if the obj is an instance of a mongoclass.
     """
@@ -122,7 +128,7 @@ async def insert_one(obj) -> InsertOneResult:
         del document["_id"]
 
     collection = getattr(obj, _COLLECTION)
-    result = await collection.insert_one(document)
+    result: InsertOneResult = await collection.insert_one(document)
     obj._id = result.inserted_id
     return result
 
