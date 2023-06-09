@@ -155,7 +155,11 @@ async def delete_one(obj) -> DeleteResult:
     return await collection.delete_one({"_id": obj._id})
 
 
-async def find_one(cls, query: Dict[str, Any]):
+async def find_one(
+    cls: Type[T],
+    query: Dict[str, Any],
+    fromdict: Callable[[Type[T], Dict[str, Any]], T] = fromdict
+) -> Optional[T]:
     """
     Return a single instance that matches the query on the mongoclass or None.
     """
@@ -169,7 +173,7 @@ async def find_one(cls, query: Dict[str, Any]):
     return fromdict(cls, document)
 
 
-def find(cls, query: Dict[str, Any]) -> AsyncIOMotorCursor:
+def find(cls: Type[T], query: Dict[str, Any]) -> AsyncIOMotorCursor:
     """
     Performs a query on the mongoclass.
     Returns a DocumentCursor.
