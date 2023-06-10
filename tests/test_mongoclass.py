@@ -1,19 +1,7 @@
 from dataclasses import dataclass
 from typing import ClassVar, Optional
 
-
-import pytest_asyncio
-from motor.motor_asyncio import AsyncIOMotorClient
-
 from mongoclasses import is_mongoclass, _is_mongoclass_instance, _is_mongoclass_type
-
-
-@pytest_asyncio.fixture
-async def collection():
-    client = AsyncIOMotorClient()
-    await client.drop_database('test')
-    db = client['test']
-    return db["test_collection"]
 
 
 class TestIsMongoclassType:
