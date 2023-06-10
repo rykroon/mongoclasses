@@ -1,80 +1,61 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import ClassVar, Optional
 
-from bson import ObjectId
-import pytest
+
 import pytest_asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from mongoclasses import mongoclass
+from mongoclasses import is_mongoclass, _is_mongoclass_instance, _is_mongoclass_type
 
 
 @pytest_asyncio.fixture
-async def database():
+async def collection():
     client = AsyncIOMotorClient()
     await client.drop_database('test')
-    return client['test']
+    db = client['test']
+    return db["test_collection"]
 
 
-@pytest.fixture
-def Foo(database):
-    @mongoclass(db=database)
-    class Foo:
-        _id: Optional[ObjectId] = None
-        name: str = ""
+class TestIsMongoclassType:
 
-    return Foo
-
-
-def test_mongoclass_creation(database):
-    # Missing a database.
-    with pytest.raises(RuntimeError):
-        @mongoclass
-        class Foo:
-            _id: Optional[ObjectId] = None
-
-    # Missing an _id field.
-    with pytest.raises(AttributeError):
-        @mongoclass(db=database)
-        class Foo:
+    def test_not_a_dataclass(self):
+        class MyClass:
             ...
 
-    # Valid mongoclass
-    @mongoclass(db=database)
-    class Foo:
-        _id: Optional[ObjectId] = None
-    
-    assert Foo.__mongoclasses_collection__.database == database
-    assert Foo.__mongoclasses_collection__.name == 'foo'
+        assert _is_mongoclass_type(MyClass) is False
+        assert _is_mongoclass_type(MyClass()) is False
 
-    # Mongoclass being created from an already existing dataclass.
-    @dataclass
-    class Foo:
-        _id: Optional[ObjectId] = None
-    
-    Foo = mongoclass(db=database)(Foo)
-    
-    assert Foo.__mongoclasses_collection__.database == database
-    assert Foo.__mongoclasses_collection__.name == 'foo'
+    def test_no_id_and_no_collection(self):
+        @dataclass
+        class MyClass:
+            ...
+
+        assert _is_mongoclass_type(MyClass) is False
+        assert _is_mongoclass_type(MyClass()) is False
 
 
-def test_mongoclass_collection_name(database):
-    @mongoclass(db=database, collection_name='foobar')
-    class Foo:
-        _id: Optional[ObjectId] = None
-    
-    assert Foo.__mongoclasses_collection__.name == 'foobar'
+    def test_no_collection(self):
+        @dataclass
+        class MyClass:
+            _id: Optional[str] = None
+
+        assert _is_mongoclass_type(MyClass) is False
+        assert _is_mongoclass_type(MyClass()) is False
 
 
-def test_database_inheritance(database):
+    def test_no_id(self):
+        @dataclass
+        class MyClass:
+            collection: ClassVar[str]
 
-    @mongoclass(db=database)
-    class Foo:
-        _id: Optional[ObjectId] = None
+        assert _is_mongoclass_type(MyClass) is False
+        assert _is_mongoclass_type(MyClass()) is False
 
-    @mongoclass
-    class Bar(Foo):
-        ...
+    def test_success(self):
+        @dataclass
+        class MyClass:
+            collection: ClassVar[str]
+            _id: Optional[str] = None
 
-    assert Foo.__mongoclasses_collection__.database == database
-    assert Bar.__mongoclasses_collection__.database == database
+        assert _is_mongoclass_type(MyClass) is True
+        assert _is_mongoclass_type(MyClass()) is False

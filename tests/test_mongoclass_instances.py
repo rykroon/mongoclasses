@@ -1,27 +1,39 @@
-from dataclasses import asdict
-from typing import Optional
+from dataclasses import asdict, dataclass
+from typing import ClassVar, Optional
 
 from bson import ObjectId
 import pytest
 import pytest_asyncio
-from motor.motor_asyncio import AsyncIOMotorClient
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
 from mongoclasses import (
-    delete_one, find, find_one, fromdict, insert_one, mongoclass, update_one
+    delete_one, find, find_one, fromdict, insert_one, update_one
 )
 
 
-@pytest_asyncio.fixture
-async def database():
+@pytest.fixture
+def client():
+    return AsyncIOMotorClient()
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def drop_database():
     client = AsyncIOMotorClient()
     await client.drop_database('test')
-    return client['test']
 
 
 @pytest.fixture
-def Foo(database):
-    @mongoclass(db=database)
+def test_collection(client):
+    db = client['test']
+    return db["test_collection"]
+
+
+@pytest.fixture
+def Foo(test_collection):
+
+    @dataclass
     class Foo:
+        collection: ClassVar[AsyncIOMotorCollection] = test_collection
         _id: Optional[ObjectId] = None
         name: str = ""
         description: str = ""
@@ -30,58 +42,58 @@ def Foo(database):
 
 
 @pytest.mark.asyncio
-async def test_insert_one_without_id(Foo, database):    
+async def test_insert_one_without_id(Foo):
     f = Foo()
     await insert_one(f)
 
     assert f._id is not None
-    assert await database['foo'].find_one({'_id': f._id}) is not None
+    assert await Foo.collection.find_one({'_id': f._id}) is not None
 
 
 @pytest.mark.asyncio
-async def test_insert_one_with_id(Foo, database):  
+async def test_insert_one_with_id(Foo):  
     # test scenario where an _id is generated before insertion.  
     object_id = ObjectId()
     f = Foo(_id=object_id)
     await insert_one(f)
 
     assert f._id == object_id
-    assert await database['foo'].find_one({'_id': f._id}) is not None
+    assert await Foo.collection.find_one({'_id': f._id}) is not None
 
 
 @pytest.mark.asyncio
-async def test_update_one(Foo, database):    
+async def test_update_one(Foo):    
     f = Foo()
     await insert_one(f)
 
     f.name = "Fred"
     await update_one(f)
-    
-    doc = await database['foo'].find_one({"_id": f._id})
+
+    doc = await Foo.collection.find_one({"_id": f._id})
     assert doc["name"] == "Fred"
 
 
 @pytest.mark.asyncio
-async def test_update_one_with_fields(Foo, database):    
+async def test_update_one_with_fields(Foo):    
     f = Foo()
     await insert_one(f)
 
     f.name = "Fred"
     f.description = "foobar"
     await update_one(f, fields=["description"])
-    
-    doc = await database['foo'].find_one({"_id": f._id})
+
+    doc = await Foo.collection.find_one({"_id": f._id})
     assert doc["name"] == ""
     assert doc["description"] == "foobar"
     
 
 @pytest.mark.asyncio
-async def test_delete_one(Foo, database):    
+async def test_delete_one(Foo):    
     f = Foo()
     await insert_one(f)
     await delete_one(f)
 
-    assert await database['foo'].find_one({"_id": f._id}) is None
+    assert await Foo.collection.find_one({"_id": f._id}) is None
 
 
 @pytest.mark.asyncio
@@ -99,7 +111,7 @@ async def test_find_one(Foo):
 
 
 @pytest.mark.asyncio
-async def test_find(Foo, database):
+async def test_find(Foo):
     f1 = Foo(name="Alice")
     await insert_one(f1)
 
