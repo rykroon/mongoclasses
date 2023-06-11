@@ -36,42 +36,15 @@ Source = "https://github.com/rykroon/mongoclasses"
 [tool.hatch.version]
 path = "src/mongoclasses/__about__.py"
 
-[tool.hatch.envs.default]
+[tool.hatch.envs.test]
 dependencies = [
-  "coverage[toml]>=6.5",
   "pytest",
   "pytest-asyncio",
+  "coverage",
 ]
-[tool.hatch.envs.default.scripts]
+[tool.hatch.envs.test.scripts]
 test = "pytest {args:tests}"
-test-cov = "coverage run -m pytest {args:tests}"
-cov-report = [
-  "- coverage combine",
-  "coverage report",
-]
-cov = [
-  "test-cov",
-  "cov-report",
-]
+cov-report = "coverage report -m"
 
-[[tool.hatch.envs.all.matrix]]
+[[tool.hatch.envs.test.matrix]]
 python = ["3.7", "3.8", "3.9", "3.10", "3.11"]
-
-[tool.coverage.run]
-source_pkgs = ["mongoclasses", "tests"]
-branch = true
-parallel = true
-omit = [
-  "src/mongoclasses/__about__.py",
-]
-
-[tool.coverage.paths]
-mongoclasses = ["src/mongoclasses", "*/mongoclasses/src/mongoclasses"]
-tests = ["tests", "*/mongoclasses/tests"]
-
-[tool.coverage.report]
-exclude_lines = [
-  "no cov",
-  "if __name__ == .__main__.:",
-  "if TYPE_CHECKING:",
-]
