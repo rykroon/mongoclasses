@@ -26,7 +26,7 @@ __all__ = [
 T = TypeVar("T")
 
 
-def fromdict(cls: Type[T], data: Dict[str, Any]) -> T:
+def fromdict(cls: Type[T], /, data: Dict[str, Any]) -> T:
     """
     Attempts to create a dataclass instance from a dictionary.
     """
@@ -57,7 +57,7 @@ def fromdict(cls: Type[T], data: Dict[str, Any]) -> T:
     return obj
 
 
-def is_mongoclass(obj) -> bool:
+def is_mongoclass(obj, /) -> bool:
     """
     Returns True if the obj is a a mongoclass or an instance of
     a mongoclass.
@@ -81,13 +81,13 @@ def is_mongoclass(obj) -> bool:
     return True
 
 
-def _is_mongoclass_type(obj: Type) -> bool:
+def _is_mongoclass_type(obj: Type, /) -> bool:
     if not inspect.isclass(obj):
         return False
     return is_mongoclass(obj)
 
 
-def _is_mongoclass_instance(obj) -> bool:
+def _is_mongoclass_instance(obj, /) -> bool:
     """
     Returns True if the obj is an instance of a mongoclass.
     """
@@ -101,7 +101,7 @@ def omit_null_id(iterable: List[Tuple[str, Any]]) -> Dict[str, Any]:
     return {k: v for k, v in iterable if k != "_id" or v is not None}
 
 
-async def insert_one(obj, dict_factory=omit_null_id) -> InsertOneResult:
+async def insert_one(obj, /, dict_factory=omit_null_id) -> InsertOneResult:
     if not _is_mongoclass_instance(obj):
         raise TypeError("Object must be a mongoclass instance.")
 
@@ -111,7 +111,7 @@ async def insert_one(obj, dict_factory=omit_null_id) -> InsertOneResult:
     return result
 
 
-async def update_one(obj, dict_factory=dict) -> UpdateResult:
+async def update_one(obj, /, dict_factory=dict) -> UpdateResult:
     if not _is_mongoclass_instance(obj):
         raise TypeError("Object must be a mongoclass instance.")
 
@@ -121,7 +121,7 @@ async def update_one(obj, dict_factory=dict) -> UpdateResult:
     )
 
 
-async def delete_one(obj) -> DeleteResult:
+async def delete_one(obj, /) -> DeleteResult:
     if not _is_mongoclass_instance(obj):
         raise TypeError("Object must be a mongoclass instance.")
 
@@ -130,6 +130,7 @@ async def delete_one(obj) -> DeleteResult:
 
 async def find_one(
     cls: Type[T],
+    /,
     query: Dict[str, Any],
     fromdict: Callable[[Type[T], Dict[str, Any]], T] = fromdict,
 ) -> Optional[T]:
@@ -145,7 +146,7 @@ async def find_one(
     return fromdict(cls, document)
 
 
-def find(cls: Type[T], query: Dict[str, Any]) -> AsyncIOMotorCursor:
+def find(cls: Type[T], /, query: Dict[str, Any]) -> AsyncIOMotorCursor:
     """
     Performs a query on the mongoclass.
     Returns a DocumentCursor.
