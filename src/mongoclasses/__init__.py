@@ -6,7 +6,7 @@ from dataclasses import (
 )
 
 import inspect
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar
 
 from motor.motor_asyncio import AsyncIOMotorCursor
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
@@ -94,24 +94,28 @@ def _is_mongoclass_instance(obj) -> bool:
     return is_mongoclass(type(obj))
 
 
-async def insert_one(obj, asdict=asdict) -> InsertOneResult:
+def omit_null_id(iterable: List[Tuple[str, Any]]) -> Dict[str, Any]:
+    """
+    A dict_factory that omits the _id field if it is None.
+    """
+    return {k: v for k, v in iterable if k != "_id" or v is not None}
+
+
+async def insert_one(obj, dict_factory=omit_null_id) -> InsertOneResult:
     if not _is_mongoclass_instance(obj):
         raise TypeError("Object must be a mongoclass instance.")
 
-    document = asdict(obj)
-    if document["_id"] is None:
-        del document["_id"]
-
+    document = asdict(obj, dict_factory=dict_factory)
     result: InsertOneResult = await type(obj).collection.insert_one(document)
     obj._id = result.inserted_id
     return result
 
 
-async def update_one(obj, asdict=asdict) -> UpdateResult:
+async def update_one(obj, dict_factory=dict) -> UpdateResult:
     if not _is_mongoclass_instance(obj):
         raise TypeError("Object must be a mongoclass instance.")
 
-    document = asdict(obj)
+    document = asdict(obj, dict_factory=dict_factory)
     return await type(obj).collection.update_one(
         filter={"_id": obj._id}, update={"$set": document}
     )
