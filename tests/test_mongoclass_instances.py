@@ -71,20 +71,6 @@ async def test_update_one(Foo):
 
     doc = await Foo.collection.find_one({"_id": f._id})
     assert doc["name"] == "Fred"
-
-
-@pytest.mark.asyncio
-async def test_update_one_with_fields(Foo):    
-    f = Foo()
-    await insert_one(f)
-
-    f.name = "Fred"
-    f.description = "foobar"
-    await update_one(f, fields=["description"])
-
-    doc = await Foo.collection.find_one({"_id": f._id})
-    assert doc["name"] == ""
-    assert doc["description"] == "foobar"
     
 
 @pytest.mark.asyncio
