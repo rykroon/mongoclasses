@@ -43,27 +43,19 @@ def fromdict(cls: Type[T], data: Dict[str, Any]) -> T:
         if field._field_type is _FIELD_CLASSVAR:
             continue
 
-        try:
-            value = data[field.name]
-
-        except KeyError:
-            # Possibly add "strict" mode which would raise the KeyError.
+        if field.name not in data:
             continue
 
         if field.init:
-            init_values[field.name] = value
+            init_values[field.name] = data[field.name]
         else:
-            non_init_values.append(((field.name, value)))
+            non_init_values.append(((field.name, data[field.name])))
 
     obj = cls(**init_values)
     for field, value in non_init_values:
         setattr(obj, field, value)
 
     return obj
-
-
-def asdict_shallow(obj: T, dict_factory=dict) -> Dict[str, Any]:
-    return dict_factory((field.name, getattr(obj, field.name)) for field in fields(obj))
 
 
 def is_mongoclass(obj) -> bool:
@@ -108,7 +100,7 @@ async def insert_one(obj, asdict=asdict) -> InsertOneResult:
         raise TypeError("Object must be a mongoclass instance.")
 
     document = asdict(obj)
-    if document["_id"] is None:
+    if "id" in document and document["_id"] is None:
         del document["_id"]
 
     result: InsertOneResult = await type(obj).collection.insert_one(document)
