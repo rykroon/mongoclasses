@@ -1,8 +1,14 @@
-from dataclasses import asdict, fields, is_dataclass, _FIELD, _FIELD_CLASSVAR
-import inspect
-from typing import (
-    Any, Callable, Dict, List, Optional, Type, TypeVar
+from dataclasses import (
+    asdict,
+    fields,
+    is_dataclass,
+    Field,
+    _FIELD,
+    _FIELD_CLASSVAR,
 )
+from functools import lru_cache
+import inspect
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar
 
 from motor.motor_asyncio import AsyncIOMotorCursor
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
@@ -22,6 +28,22 @@ __all__ = [
 T = TypeVar("T")
 
 
+@lru_cache
+def _get_init_and_post_init_fields(cls) -> Tuple[List[str], List[str]]:
+    init_fields = []
+    post_init_fields = []
+    for field in cls.__dataclass_fields__.values():
+        if field._field_type is _FIELD_CLASSVAR:
+            continue
+
+        if field.init:
+            init_fields.append(field.name)
+        else:
+            post_init_fields.append(field.name)
+
+    return init_fields, post_init_fields
+
+
 def fromdict(cls: Type[T], data: Dict[str, Any]) -> T:
     """
     Attempts to create a dataclass instance from a dictionary.
@@ -32,16 +54,13 @@ def fromdict(cls: Type[T], data: Dict[str, Any]) -> T:
     if not inspect.isclass(cls):
         raise TypeError("Object must be a dataclass type.")
 
-    # initialize object.
-    sig = inspect.signature(cls)
-    init_data = {p: data[p] for p in sig.parameters if p in data}
-    ba = sig.bind(**init_data)
-    obj = cls(*ba.args, **ba.kwargs)
+    init_fields, post_init_fields = _get_init_and_post_init_fields(cls)
 
-    # Add remaining fields (if any) using setattr.
-    non_init_fields = (f.name for f in fields(cls) if f.name not in sig.parameters)
-    non_init_data = ((f, data[f]) for f in non_init_fields if f in data)
-    for field, value in non_init_data:
+    init_values = {f: data[f] for f in init_fields if f in data}
+    post_init_values = ((f, data[f]) for f in post_init_fields if f in data)
+
+    obj = cls(**init_values)
+    for field, value in post_init_values:
         setattr(obj, field, value)
 
     return obj
@@ -54,23 +73,24 @@ def is_mongoclass(obj) -> bool:
     """
     if not is_dataclass(obj):
         return False
-
-    if "_id" not in obj.__dataclass_fields__:
-        return False
     
-    if obj.__dataclass_fields__["_id"]._field_type is not _FIELD:
+    dataclass_fields = getattr(obj, "__dataclass_fields__")
+    if "_id" not in dataclass_fields:
         return False
 
-    if "collection" not in obj.__dataclass_fields__:
+    if dataclass_fields["_id"]._field_type is not _FIELD:
         return False
 
-    if obj.__dataclass_fields__["collection"]._field_type is not _FIELD_CLASSVAR:
+    if "collection" not in dataclass_fields:
+        return False
+
+    if dataclass_fields["collection"]._field_type is not _FIELD_CLASSVAR:
         return False
 
     return True
 
 
-def _is_mongoclass_type(obj) -> bool:
+def _is_mongoclass_type(obj: Type) -> bool:
     if not inspect.isclass(obj):
         return False
     return is_mongoclass(obj)
@@ -83,7 +103,7 @@ def _is_mongoclass_instance(obj) -> bool:
     return is_mongoclass(type(obj))
 
 
-async def insert_one(obj) -> InsertOneResult:
+async def insert_one(obj, asdict=asdict) -> InsertOneResult:
     if not _is_mongoclass_instance(obj):
         raise TypeError("Object must be a mongoclass instance.")
 
@@ -119,7 +139,7 @@ async def delete_one(obj) -> DeleteResult:
 async def find_one(
     cls: Type[T],
     query: Dict[str, Any],
-    fromdict: Callable[[Type[T], Dict[str, Any]], T] = fromdict
+    fromdict: Callable[[Type[T], Dict[str, Any]], T] = fromdict,
 ) -> Optional[T]:
     """
     Return a single instance that matches the query on the mongoclass or None.
