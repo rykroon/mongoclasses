@@ -2,7 +2,6 @@ from dataclasses import (
     asdict,
     fields,
     is_dataclass,
-    Field,
     _FIELD,
     _FIELD_CLASSVAR,
 )
@@ -64,6 +63,10 @@ def fromdict(cls: Type[T], data: Dict[str, Any]) -> T:
         setattr(obj, field, value)
 
     return obj
+
+
+def asdict_shallow(obj: T, dict_factory=dict) -> Dict[str, Any]:
+    return dict_factory((field.name, getattr(obj, field.name)) for field in fields(obj))
 
 
 def is_mongoclass(obj) -> bool:
