@@ -6,10 +6,6 @@ from dataclasses import (
 )
 
 import inspect
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar
-
-from motor.motor_asyncio import AsyncIOMotorCursor
-from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
 
 
 __all__ = [
@@ -23,10 +19,7 @@ __all__ = [
 ]
 
 
-T = TypeVar("T")
-
-
-def fromdict(cls: Type[T], /, data: Dict[str, Any]) -> T:
+def fromdict(cls, /, data):
     """
     Attempts to create a dataclass instance from a dictionary.
     """
@@ -57,7 +50,7 @@ def fromdict(cls: Type[T], /, data: Dict[str, Any]) -> T:
     return obj
 
 
-def is_mongoclass(obj, /) -> bool:
+def is_mongoclass(obj, /):
     """
     Returns True if the obj is a a mongoclass or an instance of
     a mongoclass.
@@ -81,37 +74,37 @@ def is_mongoclass(obj, /) -> bool:
     return True
 
 
-def _is_mongoclass_type(obj: Type, /) -> bool:
+def _is_mongoclass_type(obj, /):
     if not inspect.isclass(obj):
         return False
     return is_mongoclass(obj)
 
 
-def _is_mongoclass_instance(obj, /) -> bool:
+def _is_mongoclass_instance(obj, /):
     """
     Returns True if the obj is an instance of a mongoclass.
     """
     return is_mongoclass(type(obj))
 
 
-def omit_null_id(iterable: List[Tuple[str, Any]]) -> Dict[str, Any]:
+def omit_null_id(iterable):
     """
     A dict_factory that omits the _id field if it is None.
     """
     return {k: v for k, v in iterable if k != "_id" or v is not None}
 
 
-async def insert_one(obj, /, dict_factory=omit_null_id) -> InsertOneResult:
+async def insert_one(obj, /, dict_factory=omit_null_id):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Object must be a mongoclass instance.")
 
     document = asdict(obj, dict_factory=dict_factory)
-    result: InsertOneResult = await type(obj).collection.insert_one(document)
+    result = await type(obj).collection.insert_one(document)
     obj._id = result.inserted_id
     return result
 
 
-async def update_one(obj, /, dict_factory=dict) -> UpdateResult:
+async def update_one(obj, /, dict_factory=dict):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Object must be a mongoclass instance.")
 
@@ -121,19 +114,14 @@ async def update_one(obj, /, dict_factory=dict) -> UpdateResult:
     )
 
 
-async def delete_one(obj, /) -> DeleteResult:
+async def delete_one(obj, /):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Object must be a mongoclass instance.")
 
     return await type(obj).collection.delete_one({"_id": obj._id})
 
 
-async def find_one(
-    cls: Type[T],
-    /,
-    query: Dict[str, Any],
-    fromdict: Callable[[Type[T], Dict[str, Any]], T] = fromdict,
-) -> Optional[T]:
+async def find_one(cls, /, query, fromdict=fromdict):
     """
     Return a single instance that matches the query on the mongoclass or None.
     """
@@ -146,7 +134,7 @@ async def find_one(
     return fromdict(cls, document)
 
 
-def find(cls: Type[T], /, query: Dict[str, Any]) -> AsyncIOMotorCursor:
+def find(cls, /, query):
     """
     Performs a query on the mongoclass.
     Returns a DocumentCursor.
