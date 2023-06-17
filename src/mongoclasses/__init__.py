@@ -5,9 +5,9 @@ from dataclasses import (
     _FIELD,
     _FIELD_CLASSVAR,
 )
-from functools import lru_cache
+
 import inspect
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar
 
 from motor.motor_asyncio import AsyncIOMotorCursor
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
@@ -27,22 +27,6 @@ __all__ = [
 T = TypeVar("T")
 
 
-@lru_cache
-def _get_init_and_post_init_fields(cls) -> Tuple[List[str], List[str]]:
-    init_fields = []
-    post_init_fields = []
-    for field in cls.__dataclass_fields__.values():
-        if field._field_type is _FIELD_CLASSVAR:
-            continue
-
-        if field.init:
-            init_fields.append(field.name)
-        else:
-            post_init_fields.append(field.name)
-
-    return init_fields, post_init_fields
-
-
 def fromdict(cls: Type[T], data: Dict[str, Any]) -> T:
     """
     Attempts to create a dataclass instance from a dictionary.
@@ -53,13 +37,26 @@ def fromdict(cls: Type[T], data: Dict[str, Any]) -> T:
     if not inspect.isclass(cls):
         raise TypeError("Object must be a dataclass type.")
 
-    init_fields, post_init_fields = _get_init_and_post_init_fields(cls)
+    init_values = {}
+    non_init_values = []
+    for field in cls.__dataclass_fields__.values():
+        if field._field_type is _FIELD_CLASSVAR:
+            continue
 
-    init_values = {f: data[f] for f in init_fields if f in data}
-    post_init_values = ((f, data[f]) for f in post_init_fields if f in data)
+        try:
+            value = data[field.name]
+
+        except KeyError:
+            # Possibly add "strict" mode which would raise the KeyError.
+            continue
+
+        if field.init:
+            init_values[field.name] = value
+        else:
+            non_init_values.append(((field.name, value)))
 
     obj = cls(**init_values)
-    for field, value in post_init_values:
+    for field, value in non_init_values:
         setattr(obj, field, value)
 
     return obj
@@ -76,7 +73,7 @@ def is_mongoclass(obj) -> bool:
     """
     if not is_dataclass(obj):
         return False
-    
+
     dataclass_fields = getattr(obj, "__dataclass_fields__")
     if "_id" not in dataclass_fields:
         return False
