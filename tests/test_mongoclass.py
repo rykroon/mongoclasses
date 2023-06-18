@@ -1,9 +1,8 @@
 from dataclasses import dataclass, InitVar
-from typing import Any, ClassVar, Optional
+from typing import Any, ClassVar
 
 from motor.motor_asyncio import AsyncIOMotorCollection
 from mongoclasses import is_mongoclass, _is_mongoclass_instance, _is_mongoclass_type
-
 
 
 class TestIsMongoclass:
