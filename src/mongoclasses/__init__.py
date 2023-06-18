@@ -1,10 +1,4 @@
-from dataclasses import (
-    asdict,
-    is_dataclass,
-    _FIELD,
-    _FIELD_CLASSVAR,
-)
-
+from dataclasses import asdict, is_dataclass, _FIELD, _FIELD_CLASSVAR
 import inspect
 
 
