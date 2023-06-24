@@ -1,0 +1,5 @@
+site_name: Mongoclasses
+theme: material
+nav:
+- Introduction: index.md
+- API Reference: apiref.md
