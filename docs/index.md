@@ -15,8 +15,8 @@ the built-in dataclass decorator.
 
 In order for a dataclass to be considered a mongoclass it must have the following two fields:
 
-- A ClassVar named 'collection'.
-- An '_id' field.
+- A ClassVar field named 'collection'.
+- A field named '_id'.
 
 
 ### Quick Example
@@ -24,14 +24,15 @@ In order for a dataclass to be considered a mongoclass it must have the followin
 from dataclasses import dataclass
 from typing import ClassVar
 import mongoclasses
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+from pymongo import MongoClient
+from pymongo.collection import Collection
 
-client = AsyncIOMotorClient()
+client = MongoClient()
 db = client["db"]
 
 @dataclass
 class MyMongoclass:
-    collection: ClassVar[AsyncIOMotorCollection] = db["collection"]
+    collection: ClassVar[Collection] = db["collection"]
     _id: int = None
 
 assert mongoclasses.is_mongoclass(MyMongoclass) is True
