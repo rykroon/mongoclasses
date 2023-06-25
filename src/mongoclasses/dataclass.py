@@ -42,7 +42,7 @@ def omit_null_id(iterable):
 
 def is_mongoclass(obj, /):
     """
-    Returns True if the obj is a a mongoclass or an instance of
+    Returns True if the obj is a mongoclass or an instance of
     a mongoclass.
     """
     if not is_dataclass(obj):

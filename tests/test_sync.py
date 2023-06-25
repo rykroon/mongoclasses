@@ -1,4 +1,4 @@
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import ClassVar, Optional
 
 from bson import ObjectId
@@ -6,9 +6,7 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 import pytest
 
-from mongoclasses import (
-    delete_one, find, find_one, fromdict, insert_one, update_one
-)
+from mongoclasses import delete_one, find, find_one, insert_one, update_one
 
 
 @pytest.fixture
@@ -18,18 +16,17 @@ def client():
 
 @pytest.fixture(autouse=True)
 def drop_database(client):
-    client.drop_database('test')
+    client.drop_database("test")
 
 
 @pytest.fixture
 def test_collection(client):
-    db = client['test']
+    db = client["test"]
     return db["test_collection"]
 
 
 @pytest.fixture
 def Foo(test_collection):
-
     @dataclass
     class Foo:
         collection: ClassVar[Collection] = test_collection
@@ -40,25 +37,25 @@ def Foo(test_collection):
     return Foo
 
 
-def test_insert_one_without_id(Foo):
-    f = Foo()
-    insert_one(f)
+class TestInsertOne:
+    def test_insert_one_without_id(self, Foo):
+        f = Foo()
+        insert_one(f)
 
-    assert f._id is not None
-    assert Foo.collection.find_one({'_id': f._id}) is not None
+        assert f._id is not None
+        assert Foo.collection.find_one({"_id": f._id}) is not None
+
+    def test_insert_one_with_id(self, Foo):
+        # test scenario where an _id is generated before insertion.
+        object_id = ObjectId()
+        f = Foo(_id=object_id)
+        insert_one(f)
+
+        assert f._id == object_id
+        assert Foo.collection.find_one({"_id": f._id}) is not None
 
 
-def test_insert_one_with_id(Foo):  
-    # test scenario where an _id is generated before insertion.  
-    object_id = ObjectId()
-    f = Foo(_id=object_id)
-    insert_one(f)
-
-    assert f._id == object_id
-    assert Foo.collection.find_one({'_id': f._id}) is not None
-
-
-def test_update_one(Foo):    
+def test_update_one(Foo):
     f = Foo()
     insert_one(f)
 
@@ -67,10 +64,9 @@ def test_update_one(Foo):
 
     doc = Foo.collection.find_one({"_id": f._id})
     assert doc["name"] == "Fred"
-    
 
 
-def test_delete_one(Foo):    
+def test_delete_one(Foo):
     f = Foo()
     insert_one(f)
     delete_one(f)
@@ -78,17 +74,16 @@ def test_delete_one(Foo):
     assert Foo.collection.find_one({"_id": f._id}) is None
 
 
-
 def test_find_one(Foo):
     f = Foo()
     insert_one(f)
 
     # Find document that exists
-    result = find_one(Foo, {'_id': f._id})
+    result = find_one(Foo, {"_id": f._id})
     assert result._id == f._id
 
     # find document that does not exist.
-    result = find_one(Foo, {'_id': "abcdef"})
+    result = find_one(Foo, {"_id": "abcdef"})
     assert result is None
 
 
@@ -107,12 +102,6 @@ def test_find(Foo):
     assert len(objects) == 3
 
 
-def test_fromdict(Foo):
-    f1 = Foo()
-    f2 = fromdict(Foo, asdict(f1))
-    assert f1 == f2
-
-
 def test_non_mongoclasses_in_mongoclass_functions():
     class Foo:
         ...
@@ -120,17 +109,17 @@ def test_non_mongoclasses_in_mongoclass_functions():
     with pytest.raises(TypeError):
         f = Foo()
         insert_one(f)
-    
+
     with pytest.raises(TypeError):
         f = Foo()
         update_one(f)
-    
+
     with pytest.raises(TypeError):
         f = Foo()
         delete_one(f)
 
     with pytest.raises(TypeError):
         find_one(Foo, {})
-    
+
     with pytest.raises(TypeError):
         find(Foo, {})
