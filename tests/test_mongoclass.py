@@ -2,7 +2,7 @@ from dataclasses import dataclass, InitVar
 from typing import Any, ClassVar
 
 from motor.motor_asyncio import AsyncIOMotorCollection
-from mongoclasses import is_mongoclass, _is_mongoclass_instance, _is_mongoclass_type
+from mongoclasses import is_mongoclass, is_mongoclass_instance, is_mongoclass_type
 
 
 class TestIsMongoclass:
@@ -11,11 +11,11 @@ class TestIsMongoclass:
         class MyClass:
             ...
 
-        assert _is_mongoclass_type(MyClass) is False
-        assert _is_mongoclass_type(MyClass()) is False
+        assert is_mongoclass_type(MyClass) is False
+        assert is_mongoclass_type(MyClass()) is False
 
-        assert _is_mongoclass_instance(MyClass) is False
-        assert _is_mongoclass_instance(MyClass()) is False
+        assert is_mongoclass_instance(MyClass) is False
+        assert is_mongoclass_instance(MyClass()) is False
 
         assert is_mongoclass(MyClass) is False
         assert is_mongoclass(MyClass()) is False
@@ -25,11 +25,11 @@ class TestIsMongoclass:
         class MyClass:
             ...
 
-        assert _is_mongoclass_type(MyClass) is False
-        assert _is_mongoclass_type(MyClass()) is False
+        assert is_mongoclass_type(MyClass) is False
+        assert is_mongoclass_type(MyClass()) is False
 
-        assert _is_mongoclass_instance(MyClass) is False
-        assert _is_mongoclass_instance(MyClass()) is False
+        assert is_mongoclass_instance(MyClass) is False
+        assert is_mongoclass_instance(MyClass()) is False
 
         assert is_mongoclass(MyClass) is False
         assert is_mongoclass(MyClass()) is False
@@ -40,11 +40,11 @@ class TestIsMongoclass:
         class MyClass:
             _id: Any = None
 
-        assert _is_mongoclass_type(MyClass) is False
-        assert _is_mongoclass_type(MyClass()) is False
+        assert is_mongoclass_type(MyClass) is False
+        assert is_mongoclass_type(MyClass()) is False
 
-        assert _is_mongoclass_instance(MyClass) is False
-        assert _is_mongoclass_instance(MyClass()) is False
+        assert is_mongoclass_instance(MyClass) is False
+        assert is_mongoclass_instance(MyClass()) is False
 
         assert is_mongoclass(MyClass) is False
         assert is_mongoclass(MyClass()) is False
@@ -55,11 +55,11 @@ class TestIsMongoclass:
         class MyClass:
             collection: ClassVar[AsyncIOMotorCollection]
 
-        assert _is_mongoclass_type(MyClass) is False
-        assert _is_mongoclass_type(MyClass()) is False
+        assert is_mongoclass_type(MyClass) is False
+        assert is_mongoclass_type(MyClass()) is False
 
-        assert _is_mongoclass_instance(MyClass) is False
-        assert _is_mongoclass_instance(MyClass()) is False
+        assert is_mongoclass_instance(MyClass) is False
+        assert is_mongoclass_instance(MyClass()) is False
 
         assert is_mongoclass(MyClass) is False
         assert is_mongoclass(MyClass()) is False
@@ -70,11 +70,11 @@ class TestIsMongoclass:
             collection: ClassVar[AsyncIOMotorCollection] = None
             _id: InitVar[Any] = None
 
-        assert _is_mongoclass_type(MyClass) is False
-        assert _is_mongoclass_type(MyClass()) is False
+        assert is_mongoclass_type(MyClass) is False
+        assert is_mongoclass_type(MyClass()) is False
 
-        assert _is_mongoclass_instance(MyClass) is False
-        assert _is_mongoclass_instance(MyClass()) is False
+        assert is_mongoclass_instance(MyClass) is False
+        assert is_mongoclass_instance(MyClass()) is False
 
         assert is_mongoclass(MyClass) is False
         assert is_mongoclass(MyClass()) is False
@@ -85,11 +85,11 @@ class TestIsMongoclass:
             collection: AsyncIOMotorCollection = None
             _id: Any = None
 
-        assert _is_mongoclass_type(MyClass) is False
-        assert _is_mongoclass_type(MyClass()) is False
+        assert is_mongoclass_type(MyClass) is False
+        assert is_mongoclass_type(MyClass()) is False
 
-        assert _is_mongoclass_instance(MyClass) is False
-        assert _is_mongoclass_instance(MyClass()) is False
+        assert is_mongoclass_instance(MyClass) is False
+        assert is_mongoclass_instance(MyClass()) is False
 
         assert is_mongoclass(MyClass) is False
         assert is_mongoclass(MyClass()) is False
@@ -101,11 +101,11 @@ class TestIsMongoclass:
             collection: ClassVar[AsyncIOMotorCollection] = None
             _id: Any = None
 
-        assert _is_mongoclass_type(MyClass) is True
-        assert _is_mongoclass_type(MyClass()) is False
+        assert is_mongoclass_type(MyClass) is True
+        assert is_mongoclass_type(MyClass()) is False
 
-        assert _is_mongoclass_instance(MyClass) is False
-        assert _is_mongoclass_instance(MyClass()) is True
+        assert is_mongoclass_instance(MyClass) is False
+        assert is_mongoclass_instance(MyClass()) is True
 
         assert is_mongoclass(MyClass) is True
         assert is_mongoclass(MyClass()) is True

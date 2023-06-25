@@ -6,8 +6,9 @@ import pytest
 import pytest_asyncio
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
-from mongoclasses import (
-    delete_one, find, find_one, fromdict, insert_one, update_one
+from mongoclasses import find
+from mongoclasses.asyncio import (
+    delete_one, find_one, fromdict, insert_one, update_one
 )
 
 
@@ -17,8 +18,7 @@ def client():
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def drop_database():
-    client = AsyncIOMotorClient()
+async def drop_database(client):
     await client.drop_database('test')
 
 
