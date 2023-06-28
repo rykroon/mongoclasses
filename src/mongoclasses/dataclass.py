@@ -6,28 +6,37 @@ def fromdict(cls, /, data):
     """
     Attempts to create a dataclass instance from a dictionary.
     """
-    if not is_dataclass(cls):
-        raise TypeError("Object must be a dataclass type.")
+    # if not is_dataclass(cls):
+    #     raise TypeError("Object must be a dataclass type.")
 
-    if not inspect.isclass(cls):
-        raise TypeError("Object must be a dataclass type.")
+    # if not inspect.isclass(cls):
+    #     raise TypeError("Object must be a dataclass type.")
 
     init_values = {}
-    non_init_values = []
+    non_init_values = {}
+    is_frozen = cls.__dataclass_params__.frozen
+
     for field in cls.__dataclass_fields__.values():
         if field._field_type is _FIELD_CLASSVAR:
             continue
 
         if field.name not in data:
+            # should this be strict?
             continue
 
+        value = data[field.name]
+
+        if is_dataclass(field.type):
+            # recursive!
+            value = fromdict(field.type, value)
+
         if field.init:
-            init_values[field.name] = data[field.name]
-        else:
-            non_init_values.append(((field.name, data[field.name])))
+            init_values[field.name] = value
+        elif not is_frozen:
+            non_init_values[field.name] = value
 
     obj = cls(**init_values)
-    for field, value in non_init_values:
+    for field, value in non_init_values.items():
         setattr(obj, field, value)
 
     return obj
