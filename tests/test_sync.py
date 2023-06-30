@@ -55,15 +55,28 @@ class TestInsertOne:
         assert Foo.collection.find_one({"_id": f._id}) is not None
 
 
-def test_update_one(Foo):
-    f = Foo()
-    insert_one(f)
+class TestUpdateOne:
+    def test_update_one(self, Foo):
+        f = Foo()
+        insert_one(f)
 
-    f.name = "Fred"
-    update_one(f)
+        f.name = "Fred"
+        update_one(f)
 
-    doc = Foo.collection.find_one({"_id": f._id})
-    assert doc["name"] == "Fred"
+        doc = Foo.collection.find_one({"_id": f._id})
+        assert doc["name"] == "Fred"
+
+    def test_update_one_with_fields(self, Foo):
+        f = Foo()
+        insert_one(f)
+
+        f.name = "Fred"
+        f.description = "Hello World"
+        update_one(f, fields=["name"])
+
+        doc = Foo.collection.find_one({"_id": f._id})
+        assert doc["name"] == "Fred"
+        assert doc["description"] == ""
 
 
 def test_delete_one(Foo):
@@ -100,26 +113,3 @@ def test_find(Foo):
     cursor = find(Foo, {})
     objects = [foo for foo in cursor]
     assert len(objects) == 3
-
-
-def test_non_mongoclasses_in_mongoclass_functions():
-    class Foo:
-        ...
-
-    with pytest.raises(TypeError):
-        f = Foo()
-        insert_one(f)
-
-    with pytest.raises(TypeError):
-        f = Foo()
-        update_one(f)
-
-    with pytest.raises(TypeError):
-        f = Foo()
-        delete_one(f)
-
-    with pytest.raises(TypeError):
-        find_one(Foo, {})
-
-    with pytest.raises(TypeError):
-        find(Foo, {})

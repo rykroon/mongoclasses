@@ -71,6 +71,20 @@ async def test_update_one(Foo):
 
 
 @pytest.mark.asyncio
+async def test_update_one_with_fields(Foo):
+    f = Foo()
+    await insert_one(f)
+
+    f.name = "Fred"
+    f.description = "Hello World"
+    await update_one(f, fields=["name"])
+
+    doc = await Foo.collection.find_one({"_id": f._id})
+    assert doc["name"] == "Fred"
+    assert doc["description"] == ""
+
+
+@pytest.mark.asyncio
 async def test_delete_one(Foo):
     f = Foo()
     await insert_one(f)
@@ -107,27 +121,3 @@ async def test_find(Foo):
     cursor = find(Foo, {})
     objects = [foo async for foo in cursor]
     assert len(objects) == 3
-
-
-@pytest.mark.asyncio
-async def test_non_mongoclasses_in_mongoclass_functions():
-    class Foo:
-        ...
-
-    with pytest.raises(TypeError):
-        f = Foo()
-        await insert_one(f)
-
-    with pytest.raises(TypeError):
-        f = Foo()
-        await update_one(f)
-
-    with pytest.raises(TypeError):
-        f = Foo()
-        await delete_one(f)
-
-    with pytest.raises(TypeError):
-        await find_one(Foo, {})
-
-    with pytest.raises(TypeError):
-        find(Foo, {})

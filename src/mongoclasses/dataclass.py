@@ -42,11 +42,11 @@ def fromdict(cls, /, data):
     return obj
 
 
-def omit_null_id(iterable):
-    """
-    A dict_factory that omits the _id field if it is None.
-    """
-    return {k: v for k, v in iterable if k != "_id" or v is not None}
+def create_include_dict_factory(fields):
+    def dict_factory(iterable):
+        return {k: v for k, v in iterable if k in fields}
+
+    return dict_factory
 
 
 def is_mongoclass(obj, /):

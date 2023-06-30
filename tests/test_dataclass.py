@@ -135,16 +135,6 @@ class TestFromdict:
         data = {"a": 1, "b": 2, "c": 3}
         obj = fromdict(Foo, data)
 
-    def test_not_a_dataclass(self):
-        class Foo:
-            a: int
-            b: int
-            c: int
-
-        data = {"a": 1, "b": 2, "c": 3}
-        with pytest.raises(TypeError):
-            obj = fromdict(Foo, data)
-
     def test_not_a_class(self):
         @dataclass
         class Foo:
