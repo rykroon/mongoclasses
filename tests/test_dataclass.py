@@ -154,7 +154,7 @@ class TestFromdict:
             c: int
 
         data = {"a": 1, "b": 2}
-        with pytest.raises(TypeError):
+        with pytest.raises(KeyError):
             obj = fromdict(Foo, data)
 
     def test_extra_data(self):
@@ -185,7 +185,7 @@ class TestFromdict:
 
         data = {"a": 1, "b": 2, "c": 3}
 
-        with pytest.raises(TypeError):
+        with pytest.raises(KeyError):
             obj = fromdict(Foo, data)
 
         data["d"] = 4
@@ -200,7 +200,9 @@ class TestFromdict:
             d: int = field(init=False)
 
         data = {"a": 1, "b": 2, "c": 3}
-        obj = fromdict(Foo, data)
+
+        with pytest.raises(KeyError):
+            obj = fromdict(Foo, data)
 
         data["d"] = 4
         obj = fromdict(Foo, data)
