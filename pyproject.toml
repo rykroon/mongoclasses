@@ -47,3 +47,12 @@ cov-report = "coverage report -m"
 
 [[tool.hatch.envs.test.matrix]]
 python = ["3.8", "3.9", "3.10", "3.11"]
+
+[tool.hatch.envs.docs]
+dependencies = [
+  "mkdocs",
+  "mkdocs-material",
+  "mkautodoc",
+]
+[tool.hatch.envs.docs.scripts]
+serve = "mkdocs serve"

@@ -1,5 +1,45 @@
 site_name: Mongoclasses
-theme: material
+site_description: abc
+site_url: https://www.python-mongoclasses.org/
+
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+
+  palette:
+
+    - scheme: 'default'
+      primary: green
+      accent: green
+      media: '(prefers-color-scheme: light)'
+      toggle:
+        icon: 'material/brightness-7'
+        name: 'Switch to dark mode'
+  
+    - scheme: 'slate'
+      primary: green
+      accent: green
+      media: '(prefers-color-scheme: dark)'
+      toggle:
+        icon: 'material/brightness-4'
+        name: 'Switch to light mode'
+
+  features:
+      - navigation.sections
+
+
+repo_name: rykroon/mongoclasses
+repo_url: https://github.com/rykroon/mongoclasses/
+
+
 nav:
-- Introduction: index.md
-# - API Reference: apiref.md
+  - Introduction: index.md
+  - API Reference: apiref.md
+
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - mkautodoc

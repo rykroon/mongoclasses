@@ -5,6 +5,17 @@ from .dataclass import (
 
 
 def insert_one(obj, /):
+    """
+    Inserts the object into the database.
+    If `_id is None` it will be removed from the document before insertion and the
+    new inserted id will be added to the object.
+
+    **Parameters:**
+
+    * **obj** - A mongoclass instance.
+
+    **Returns:** `InsertOneResult`
+    """
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
@@ -18,6 +29,17 @@ def insert_one(obj, /):
 
 
 def update_one(obj, /, fields=None):
+    """
+    Updates the object in the database.
+
+    **Parameters:**
+
+    * **obj** - A mongoclass instance.
+    * **fields** - A list of field names. If provided, only the fields listed will be
+    updated in the database.
+
+    **Returns:** `UpdateResult`
+    """
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
@@ -29,6 +51,15 @@ def update_one(obj, /, fields=None):
 
 
 def delete_one(obj, /):
+    """
+    Deletes the object from the database.
+
+    **Parameters:**
+
+    * **obj** - A mongoclass instance.
+
+    **Returns:** `DeleteResult`
+    """
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
@@ -37,7 +68,15 @@ def delete_one(obj, /):
 
 def find_one(cls, /, query, fromdict=fromdict):
     """
-    Return a single instance that matches the query on the mongoclass or None.
+    Return a single instance that matches the query.
+
+    **Parameters:**
+
+    * **cls** - A mongoclass type.
+    * **query** - A dictionary representing a MongoDB query.
+    * **fromdict** - The fromdict function to be used.
+
+    **Returns:** - `DataclassInstance | None`
     """
     if not _is_mongoclass_type(cls):
         raise TypeError("Not a mongoclass type.")
@@ -51,7 +90,14 @@ def find_one(cls, /, query, fromdict=fromdict):
 def find(cls, /, query):
     """
     Performs a query on the mongoclass.
-    Returns a DocumentCursor.
+
+    **Parameters:**
+
+    * **cls** - A mongoclass type.
+    * **query** - A dictionary representing a MongoDB query.
+
+    **Returns:** `Cursor | AsyncIOMotorCursor`
+
     """
     if not _is_mongoclass_type(cls):
         raise TypeError("Not a mongoclass type.")
