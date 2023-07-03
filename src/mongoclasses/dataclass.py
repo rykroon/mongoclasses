@@ -77,13 +77,13 @@ def is_mongoclass(obj, /):
     return True
 
 
-def is_mongoclass_type(obj, /):
+def _is_mongoclass_type(obj, /):
     if not inspect.isclass(obj):
         return False
     return is_mongoclass(obj)
 
 
-def is_mongoclass_instance(obj, /):
+def _is_mongoclass_instance(obj, /):
     """
     Returns True if the obj is an instance of a mongoclass.
     """
