@@ -6,15 +6,17 @@ def fromdict(cls, /, data, strict=True):
     """
     Creates a dataclass instance from a dictionary.
 
-    **Parameters:**
-
-    * **data** - A dictionary containing the data with which to be used to create the
-    dataclass.
-    * **strict** - If True, the default, then all dataclass fields must be present in
+    Parameters:
+        data: A dictionary containing the data with which to be used to create the dataclass.
+        strict: If True, the default, then all dataclass fields must be present in
     the data dictionary. If False, then the default value of the field will be used. If
     a default value is not present, then a KeyError will be raised.
 
-    **Returns:** `DataclassInstance`
+    Raises:
+        KeyError: When data is missing a key and stict is True.
+
+    Returns:
+        A dataclass instance.
     """
     init_values = {}
     non_init_values = {}
@@ -64,6 +66,12 @@ def create_include_dict_factory(fields):
 def is_mongoclass(obj, /):
     """
     Returns True if the obj is a mongoclass type or instance else False.
+
+    Parameters:
+        obj: Any object.
+    
+    Returns:
+        True if the object is a mongoclass type or instance.
     """
     if not is_dataclass(obj):
         return False

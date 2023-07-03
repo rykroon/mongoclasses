@@ -10,11 +10,14 @@ def insert_one(obj, /):
     If `_id is None` it will be removed from the document before insertion and the
     new inserted id will be added to the object.
 
-    **Parameters:**
+    Parameters:
+        obj: A mongoclass instance.
+    
+    Raises:
+        TypeError: If the object is not a mongoclass instance.
 
-    * **obj** - A mongoclass instance.
-
-    **Returns:** `InsertOneResult`
+    Returns:
+        InsertOneResult
     """
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
@@ -32,13 +35,16 @@ def update_one(obj, /, fields=None):
     """
     Updates the object in the database.
 
-    **Parameters:**
-
-    * **obj** - A mongoclass instance.
-    * **fields** - A list of field names. If provided, only the fields listed will be
+    Parameters:
+        obj: A mongoclass instance.
+        fields: A list of field names. If provided, only the fields listed will be
     updated in the database.
 
-    **Returns:** `UpdateResult`
+    Raises:
+        TypeError: If the object is not a mongoclass instance.
+
+    Returns:
+        UpdateResult
     """
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
@@ -54,11 +60,14 @@ def delete_one(obj, /):
     """
     Deletes the object from the database.
 
-    **Parameters:**
+    Parameters:
+        obj: A mongoclass instance.
+    
+    Raises:
+        TypeError: If the object is not a mongoclass instance.
 
-    * **obj** - A mongoclass instance.
-
-    **Returns:** `DeleteResult`
+    Returns:
+        DeleteResult
     """
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
@@ -70,13 +79,13 @@ def find_one(cls, /, query, fromdict=fromdict):
     """
     Return a single instance that matches the query.
 
-    **Parameters:**
+    Parameters:
+        cls: A mongoclass type.
+        query: A dictionary representing a MongoDB query.
+        fromdict: The fromdict function to be used.
 
-    * **cls** - A mongoclass type.
-    * **query** - A dictionary representing a MongoDB query.
-    * **fromdict** - The fromdict function to be used.
-
-    **Returns:** - `DataclassInstance | None`
+    Returns:
+        DataclassInstance | None
     """
     if not _is_mongoclass_type(cls):
         raise TypeError("Not a mongoclass type.")
@@ -91,13 +100,12 @@ def find(cls, /, query):
     """
     Performs a query on the mongoclass.
 
-    **Parameters:**
+    Parameters:
+        cls: A mongoclass type.
+        query: A dictionary representing a MongoDB query.
 
-    * **cls** - A mongoclass type.
-    * **query** - A dictionary representing a MongoDB query.
-
-    **Returns:** `Cursor | AsyncIOMotorCursor`
-
+    Returns:
+        Cursor | AsyncIOMotorCursor 
     """
     if not _is_mongoclass_type(cls):
         raise TypeError("Not a mongoclass type.")

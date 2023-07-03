@@ -41,5 +41,12 @@ nav:
 
 markdown_extensions:
   - admonition
-  - codehilite
-  - mkautodoc
+
+plugins:
+- mkdocstrings:
+    handlers:
+      python:
+        options:
+          show_root_heading: true
+          separate_signature: true
+          show_signature_annotations: false

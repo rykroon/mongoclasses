@@ -10,9 +10,7 @@ class MongoclassInstance(DataclassInstance):
     collection: ClassVar[AsyncIOMotorCollection | Collection]
     _id: Any
 
-Data: TypeAlias = dict[str, Any]
-
-def fromdict(cls: type[DataclassInstance], /, data: Data) -> DataclassInstance: ...
+def fromdict(cls: type[DataclassInstance], /, data: dict[str, Any], strict: bool) -> DataclassInstance: ...
 def is_mongoclass(
     obj: Any, /
 ) -> TypeGuard[MongoclassInstance | type[MongoclassInstance]]: ...
