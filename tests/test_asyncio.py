@@ -121,3 +121,22 @@ async def test_find(Foo):
     cursor = find(Foo, {})
     objects = [foo async for foo in cursor]
     assert len(objects) == 3
+
+
+@pytest.mark.asyncio
+async def test_not_a_mongoclass():
+    @dataclass
+    class Foo:
+        ...
+    
+    with pytest.raises(TypeError):
+        await insert_one(Foo())
+    
+    with pytest.raises(TypeError):
+        await update_one(Foo())
+    
+    with pytest.raises(TypeError):
+        await delete_one(Foo())
+
+    with pytest.raises(TypeError):
+        await find_one(Foo, {})

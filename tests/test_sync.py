@@ -113,3 +113,24 @@ def test_find(Foo):
     cursor = find(Foo, {})
     objects = [foo for foo in cursor]
     assert len(objects) == 3
+
+
+def test_not_a_mongoclass():
+    @dataclass
+    class Foo:
+        ...
+    
+    with pytest.raises(TypeError):
+        insert_one(Foo())
+    
+    with pytest.raises(TypeError):
+        update_one(Foo())
+    
+    with pytest.raises(TypeError):
+        delete_one(Foo())
+
+    with pytest.raises(TypeError):
+        find_one(Foo, {})
+
+    with pytest.raises(TypeError):
+        find(Foo, {})
