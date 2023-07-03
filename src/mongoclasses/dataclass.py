@@ -1,10 +1,12 @@
-from dataclasses import is_dataclass, _FIELD, _FIELD_CLASSVAR
+from dataclasses import is_dataclass, MISSING, _FIELD, _FIELD_CLASSVAR
 import inspect
 
 
-def fromdict(cls, /, data):
+def fromdict(cls, /, data, strict=True):
     """
     Attempts to create a dataclass instance from a dictionary.
+    If strict is True then all fields must be present in the data dictionary.
+        otherwise, the default value will be used.
     """
     init_values = {}
     non_init_values = {}
@@ -13,7 +15,21 @@ def fromdict(cls, /, data):
         if field._field_type is _FIELD_CLASSVAR:
             continue
 
-        value = data[field.name]
+        try:
+            value = data[field.name]
+
+        except KeyError as e:
+            if strict:
+                raise e
+
+            if field.default is not MISSING:
+                value = field.default
+            
+            elif field.default_factory is not MISSING:
+                value = field.default_factory()
+
+            else:
+                raise e
 
         if is_dataclass(field.type):
             value = fromdict(field.type, value)
