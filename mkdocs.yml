@@ -49,4 +49,5 @@ plugins:
         options:
           show_root_heading: true
           separate_signature: true
-          show_signature_annotations: false
+    watch:
+    - src/mongoclasses

@@ -17,7 +17,7 @@ def insert_one(obj, /):
         TypeError: If the object is not a mongoclass instance.
 
     Returns:
-        InsertOneResult
+        A pymongo `InsertOneResult` object.
     """
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
@@ -37,14 +37,14 @@ def update_one(obj, /, fields=None):
 
     Parameters:
         obj: A mongoclass instance.
-        fields: A list of field names. If provided, only the fields listed will be
-    updated in the database.
+        fields: A list of field names. If provided, only the fields listed will be \
+            updated in the database.
 
     Raises:
         TypeError: If the object is not a mongoclass instance.
 
     Returns:
-        UpdateResult
+        A pymongo `UpdateResult` object.
     """
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
@@ -67,7 +67,7 @@ def delete_one(obj, /):
         TypeError: If the object is not a mongoclass instance.
 
     Returns:
-        DeleteResult
+        A pymongo `DeleteResult` object.
     """
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
@@ -77,15 +77,18 @@ def delete_one(obj, /):
 
 def find_one(cls, /, query, fromdict=fromdict):
     """
-    Return a single instance that matches the query.
+    Return a single instance that matches the query or None.
 
     Parameters:
         cls: A mongoclass type.
         query: A dictionary representing a MongoDB query.
         fromdict: The fromdict function to be used.
+    
+    Raises:
+        TypeError: If the class is not a Mongoclass type. 
 
     Returns:
-        DataclassInstance | None
+        A mongoclass instance or None.
     """
     if not _is_mongoclass_type(cls):
         raise TypeError("Not a mongoclass type.")
@@ -104,8 +107,12 @@ def find(cls, /, query):
         cls: A mongoclass type.
         query: A dictionary representing a MongoDB query.
 
+    Raises:
+        TypeError: If the class is not a Mongoclass type.
+
     Returns:
-        Cursor | AsyncIOMotorCursor 
+        A `Cursor` object if the mongoclass's collection is synchronous or an \
+            `AsyncIOMotorCursor` object if the collection is asynchronous.
     """
     if not _is_mongoclass_type(cls):
         raise TypeError("Not a mongoclass type.")
