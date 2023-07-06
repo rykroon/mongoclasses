@@ -1,6 +1,6 @@
 from dataclasses import asdict
 from .dataclass import (
-    fromdict, create_include_dict_factory, _is_mongoclass_instance, _is_mongoclass_type
+    fromdict, _is_mongoclass_instance, _is_mongoclass_type
 )
 
 
@@ -49,8 +49,10 @@ def update_one(obj, /, fields=None):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
-    dict_factory = dict if fields is None else create_include_dict_factory(fields)
-    document = asdict(obj, dict_factory=dict_factory)
+    document = asdict(obj)
+    if fields is not None:
+        document = {k: v for k, v in document.items() if k in fields}
+
     return type(obj).collection.update_one(
         filter={"_id": obj._id}, update={"$set": document}
     )
