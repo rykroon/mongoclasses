@@ -1,20 +1,14 @@
 from dataclasses import is_dataclass, MISSING, _FIELD, _FIELD_CLASSVAR
+from functools import lru_cache
 import inspect
 
 
-def fromdict(cls, /, data, strict=True):
+def fromdict(cls, /, data):
     """
     Creates a dataclass instance from a dictionary.
 
     Parameters:
-        data: A dictionary containing the data with which to be used to create the \
-            dataclass.
-        strict: If True, then all fields must be present in `data`. If False, then the \
-            default value of the field will be used.
-
-    Raises:
-        KeyError: If strict is True and a field is missing from `data` or if strict is \
-            False and the field does not have a default value.
+        data: A dictionary containing the data to create the dataclass.
 
     Returns:
         A dataclass instance.
@@ -26,21 +20,17 @@ def fromdict(cls, /, data, strict=True):
         if field._field_type is _FIELD_CLASSVAR:
             continue
 
-        try:
+        if field.name in data:
             value = data[field.name]
 
-        except KeyError as e:
-            if strict:
-                raise e
-
-            if field.default is not MISSING:
-                value = field.default
+        elif field.default is not MISSING:
+            value = field.default
             
-            elif field.default_factory is not MISSING:
-                value = field.default_factory()
+        elif field.default_factory is not MISSING:
+            value = field.default_factory()
 
-            else:
-                raise e
+        else:
+             continue
 
         if is_dataclass(field.type):
             value = fromdict(field.type, value)
@@ -57,13 +47,6 @@ def fromdict(cls, /, data, strict=True):
     return obj
 
 
-def create_include_dict_factory(fields):
-    def dict_factory(iterable):
-        return {k: v for k, v in iterable if k in fields}
-
-    return dict_factory
-
-
 def is_mongoclass(obj, /):
     """
     Returns True if the object is a mongoclass type or instance else False.
@@ -74,6 +57,20 @@ def is_mongoclass(obj, /):
     Returns:
         True if the object is a mongoclass type or instance.
     """
+    if not inspect.isclass(obj):
+        obj = type(obj)
+    return _is_mongoclass_type(obj)
+
+
+def _is_mongoclass_instance(obj, /):
+    return _is_mongoclass_type(type(obj))
+
+
+@lru_cache
+def _is_mongoclass_type(obj, /):
+    if not inspect.isclass(obj):
+        return False
+
     if not is_dataclass(obj):
         return False
 
@@ -91,16 +88,3 @@ def is_mongoclass(obj, /):
         return False
 
     return True
-
-
-def _is_mongoclass_type(obj, /):
-    if not inspect.isclass(obj):
-        return False
-    return is_mongoclass(obj)
-
-
-def _is_mongoclass_instance(obj, /):
-    """
-    Returns True if the obj is an instance of a mongoclass.
-    """
-    return is_mongoclass(type(obj))
