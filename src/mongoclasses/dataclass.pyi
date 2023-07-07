@@ -1,3 +1,4 @@
+from abc import ABCMeta
 from typing import Any, ClassVar, TypeGuard, TYPE_CHECKING
 
 from pymongo.collection import Collection
@@ -6,7 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorCollection
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
 
-class MongoclassInstance(DataclassInstance):
+class MongoclassInstance(DataclassInstance, metaclass=ABCMeta):
     collection: ClassVar[AsyncIOMotorCollection | Collection]
     _id: Any
 

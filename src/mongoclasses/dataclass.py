@@ -68,9 +68,6 @@ def _is_mongoclass_instance(obj, /):
 
 @lru_cache
 def _is_mongoclass_type(obj, /):
-    if not inspect.isclass(obj):
-        return False
-
     if not is_dataclass(obj):
         return False
 
