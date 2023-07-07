@@ -2,12 +2,7 @@ from dataclasses import InitVar, dataclass, field
 from typing import Any, ClassVar
 
 from motor.motor_asyncio import AsyncIOMotorCollection
-from mongoclasses import (
-    fromdict,
-    is_mongoclass,
-    _is_mongoclass_instance,
-    _is_mongoclass_type,
-)
+from mongoclasses import fromdict, is_mongoclass, _is_mongoclass_instance
 import pytest
 
 

@@ -1,6 +1,6 @@
 from typing import Any, Callable, TYPE_CHECKING
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
-from .dataclass import MongoclassInstance
+from .mongoclasses import MongoclassInstance
 
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance

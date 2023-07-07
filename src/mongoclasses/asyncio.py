@@ -1,7 +1,5 @@
 from dataclasses import asdict
-from .dataclass import (
-    fromdict, _is_mongoclass_instance, _is_mongoclass_type
-)
+from .mongoclasses import fromdict, _is_mongoclass_instance, _is_mongoclass_type
 
 
 async def insert_one(obj, /):
