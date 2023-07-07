@@ -23,8 +23,6 @@ class TestIsMongoclass:
         assert _is_mongoclass_instance(MyClass) is False
         assert _is_mongoclass_instance(MyClass()) is False
 
-
-
     def test_no_id_and_no_collection(self):
         @dataclass
         class MyClass:
@@ -110,6 +108,7 @@ class TestFromdict:
 
         data = {"a": 1, "b": 2, "c": 3}
         obj = fromdict(Foo, data)
+        assert isinstance(obj, Foo)
 
     def test_fromdict_success_recursive(self):
         @dataclass
@@ -145,6 +144,18 @@ class TestFromdict:
 
         data = {"a": 1, "b": 2}
         obj = fromdict(Foo, data)
+        assert obj.c == 0
+    
+    def test_missing_data_with_default_factory(self):
+        @dataclass
+        class Foo:
+            a: int
+            b: int
+            c: list[int] = field(default_factory=list)
+
+        data = {"a": 1, "b": 2}
+        obj = fromdict(Foo, data)
+        assert obj.c == []
 
     def test_missing_data_without_default(self):
         @dataclass
