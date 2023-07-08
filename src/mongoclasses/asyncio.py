@@ -35,14 +35,11 @@ async def delete_one(obj, /):
     return await type(obj).collection.delete_one({"_id": obj._id})
 
 
-async def find_one(cls, /, query, fromdict=fromdict):
-    """
-    Return a single instance that matches the query on the mongoclass or None.
-    """
+async def find_one(cls, /, filter=None, fromdict=fromdict):
     if not _is_mongoclass_type(cls):
         raise TypeError("Not a mongoclass type.")
 
-    document = await cls.collection.find_one(query)
+    document = await cls.collection.find_one(filter=filter)
     if document is None:
         return None
     return fromdict(cls, document)

@@ -160,13 +160,13 @@ def delete_one(obj, /):
     return type(obj).collection.delete_one({"_id": obj._id})
 
 
-def find_one(cls, /, query, fromdict=fromdict):
+def find_one(cls, /, filter=None, fromdict=fromdict):
     """
     Return a single instance that matches the query or None.
 
     Parameters:
         cls: A mongoclass type.
-        query: A dictionary representing a MongoDB query.
+        filter: A dictionary specifying the query to be performed.
         fromdict: The fromdict function to be used.
 
     Raises:
@@ -178,19 +178,19 @@ def find_one(cls, /, query, fromdict=fromdict):
     if not _is_mongoclass_type(cls):
         raise TypeError("Not a mongoclass type.")
 
-    document = cls.collection.find_one(query)
+    document = cls.collection.find_one(filter=filter)
     if document is None:
         return None
     return fromdict(cls, document)
 
 
-def find(cls, /, query):
+def find(cls, /, filter=None, skip=0, limit=0, sort=None):
     """
     Performs a query on the mongoclass.
 
     Parameters:
         cls: A mongoclass type.
-        query: A dictionary representing a MongoDB query.
+        filter: A dictionary specifying the query to be performed.
 
     Raises:
         TypeError: If the class is not a Mongoclass type.
@@ -202,4 +202,4 @@ def find(cls, /, query):
     if not _is_mongoclass_type(cls):
         raise TypeError("Not a mongoclass type.")
 
-    return cls.collection.find(filter=query)
+    return cls.collection.find(filter=filter, skip=skip, limit=limit, sort=sort)
