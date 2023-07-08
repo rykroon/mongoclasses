@@ -13,6 +13,11 @@ class MongoclassInstance(DataclassInstance, metaclass=ABCMeta):
     collection: ClassVar[AsyncIOMotorCollection | Collection]
     _id: Any
 
+
+def asdict(obj: Any, include: list[str] | None, exclude: list[str] | None):
+    ...
+
+
 def fromdict(
     cls: type[DataclassInstance], /, data: dict[str, Any]
 ) -> DataclassInstance: ...

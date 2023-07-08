@@ -1,6 +1,58 @@
-from dataclasses import asdict, is_dataclass, MISSING, _FIELD, _FIELD_CLASSVAR
+from dataclasses import (
+    fields,
+    is_dataclass,
+    MISSING,
+    _FIELD,
+    _FIELD_CLASSVAR,
+    _is_dataclass_instance,
+)
 from functools import lru_cache
 import inspect
+
+
+def asdict(obj, include=None, exclude=None):
+    if not _is_dataclass_instance(obj):
+        raise TypeError("asdict() should be called on dataclass instances")
+
+    if include is not None and exclude is not None:
+        raise ValueError("include and exclude cannot be used together.")
+
+    if include is not None:
+        return {
+            f.name: _asdict(getattr(obj, f.name))
+            for f in fields(obj)
+            if f.name in include
+        }
+
+    if exclude is not None:
+        return {
+            f.name: _asdict(getattr(obj, f.name))
+            for f in fields(obj)
+            if f.name not in exclude
+        }
+
+    return {f.name: _asdict(getattr(obj, f.name)) for f in fields(obj)}
+
+
+def _asdict(value):
+    """
+    This asdict() function makes a few assumptions since it is being used within the
+    context of MongoDB.
+    1) dictionary keys are assumed to be strings.
+    2) tuples, sets, and frozensets are converted into a list (array). since those types
+        do not exist in mongoDB.
+    """
+    if _is_dataclass_instance(value):
+        return {f.name: _asdict(getattr(value, f.name)) for f in fields(value)}
+
+    elif isinstance(value, (list, tuple, set, frozenset)):
+        return [_asdict(i) for i in value]
+
+    elif isinstance(value, dict):
+        return {k: _asdict(v) for k, v in value.items()}
+
+    else:
+        return value
 
 
 def fromdict(cls, /, data):
