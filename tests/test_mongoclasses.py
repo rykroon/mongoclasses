@@ -93,6 +93,33 @@ class TestIsMongoclass:
         assert _is_mongoclass_instance(MyClass()) is True
 
 
+class TestAsDict:
+
+    def test_recursive_dataclass(self):
+        ...
+    
+    def test_recursive_list(self):
+        ...
+    
+    def test_recursive_tuple(self):
+        ...
+
+    def test_recursive_set(self):
+        ...
+    
+    def test_recursive_frozenset(self):
+        ...
+    
+    def test_recursive_dict(self):
+        ...
+    
+    def test_include(self):
+        ...
+    
+    def test_exclude(self):
+        ...
+
+
 class TestFromdict:
 
     """
