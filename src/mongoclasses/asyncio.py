@@ -1,5 +1,4 @@
-from dataclasses import asdict
-from .mongoclasses import fromdict, _is_mongoclass_instance, _is_mongoclass_type
+from .mongoclasses import asdict, fromdict, _is_mongoclass_instance, _is_mongoclass_type
 
 
 async def insert_one(obj, /):
@@ -19,10 +18,7 @@ async def update_one(obj, /, fields=None):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
-    document = asdict(obj)
-    if fields is not None:
-        document = {k: v for k, v in document.items() if k in fields}
-
+    document = asdict(obj, include=fields)
     return await type(obj).collection.update_one(
         filter={"_id": obj._id}, update={"$set": document}
     )

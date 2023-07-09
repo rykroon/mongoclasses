@@ -1,5 +1,6 @@
 from . import asyncio
 from .mongoclasses import (
+    asdict,
     fromdict,
     is_mongoclass,
     insert_one,
@@ -11,6 +12,7 @@ from .mongoclasses import (
 )
 
 __all__ = [
+    "asdict",
     "asyncio",
     "fromdict",
     "is_mongoclass",
