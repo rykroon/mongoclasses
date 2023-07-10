@@ -14,7 +14,9 @@ class MongoclassInstance(DataclassInstance, metaclass=ABCMeta):
     _id: Any
 
 
-def asdict(obj: Any, include: list[str] | None, exclude: list[str] | None):
+def asdict(
+    obj: Any, include: list[str] | None, exclude: list[str] | None
+) -> dict[str, Any]:
     ...
 
 
@@ -49,7 +51,7 @@ def find_one(
     cls: type[MongoclassInstance],
     /,
     filter: dict[str, Any] | None,
-    fromdict: Callable[[type[DataclassInstance], Any], DataclassInstance],
+    fromdict: Callable[[type[DataclassInstance], dict[str, Any]], DataclassInstance],
 ) -> MongoclassInstance | None: ...
 
 

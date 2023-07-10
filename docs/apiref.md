@@ -8,6 +8,9 @@
 ::: mongoclasses.is_mongoclass
 ___
 
+::: mongoclasses.asdict
+___
+
 ::: mongoclasses.fromdict
 ___
 

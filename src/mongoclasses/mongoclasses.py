@@ -11,6 +11,17 @@ import inspect
 
 
 def asdict(obj, include=None, exclude=None):
+    """
+    Converts a dataclass instance into a dictionary.
+
+    Parameters:
+        obj: A dataclass instance.
+        include: A list of fields to include in the dictionary.
+        exclude: A list of fields to exclude from the dictionary.
+    
+    Returns:
+        A dictionary.
+    """
     if not _is_dataclass_instance(obj):
         raise TypeError("asdict() should be called on dataclass instances")
 
