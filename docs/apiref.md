@@ -11,9 +11,6 @@ ___
 ::: mongoclasses.asdict
 ___
 
-::: mongoclasses.fromdict
-___
-
 ::: mongoclasses.insert_one
 ___
 

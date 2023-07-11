@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Any, Callable, ClassVar, Literal, TypeGuard, TYPE_CHECKING
+from typing import Any, ClassVar, Literal, TypeGuard, TYPE_CHECKING
 
 from pymongo.collection import Collection
 from pymongo.cursor import Cursor
@@ -18,11 +18,6 @@ def asdict(
     obj: Any, include: list[str] | None, exclude: list[str] | None
 ) -> dict[str, Any]:
     ...
-
-
-def fromdict(
-    cls: type[DataclassInstance], /, data: dict[str, Any]
-) -> DataclassInstance: ...
 
 
 def is_mongoclass(
@@ -51,7 +46,6 @@ def find_one(
     cls: type[MongoclassInstance],
     /,
     filter: dict[str, Any] | None,
-    fromdict: Callable[[type[DataclassInstance], dict[str, Any]], DataclassInstance],
 ) -> MongoclassInstance | None: ...
 
 

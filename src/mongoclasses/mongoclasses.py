@@ -1,13 +1,14 @@
 from dataclasses import (
     fields,
     is_dataclass,
-    MISSING,
     _FIELD,
     _FIELD_CLASSVAR,
     _is_dataclass_instance,
 )
 from functools import lru_cache
 import inspect
+
+from dacite import from_dict, Config
 
 
 def asdict(obj, include=None, exclude=None):
@@ -18,7 +19,7 @@ def asdict(obj, include=None, exclude=None):
         obj: A dataclass instance.
         include: A list of fields to include in the dictionary.
         exclude: A list of fields to exclude from the dictionary.
-    
+
     Returns:
         A dictionary.
     """
@@ -28,21 +29,15 @@ def asdict(obj, include=None, exclude=None):
     if include is not None and exclude is not None:
         raise ValueError("include and exclude cannot be used together.")
 
+    result = ((f.name, _asdict(getattr(obj, f.name))) for f in fields(obj))
+
     if include is not None:
-        return {
-            f.name: _asdict(getattr(obj, f.name))
-            for f in fields(obj)
-            if f.name in include
-        }
+        result = filter(lambda x: x[0] in include, result)
 
-    if exclude is not None:
-        return {
-            f.name: _asdict(getattr(obj, f.name))
-            for f in fields(obj)
-            if f.name not in exclude
-        }
+    elif exclude is not None:
+        result = filter(lambda x: x[0] not in exclude, result)
 
-    return {f.name: _asdict(getattr(obj, f.name)) for f in fields(obj)}
+    return dict(result)
 
 
 def _asdict(value):
@@ -64,50 +59,6 @@ def _asdict(value):
 
     else:
         return value
-
-
-def fromdict(cls, /, data):
-    """
-    Creates a dataclass instance from a dictionary.
-
-    Parameters:
-        data: A dictionary containing the data to create the dataclass.
-
-    Returns:
-        A dataclass instance.
-    """
-    init_values = {}
-    non_init_values = {}
-
-    for field in cls.__dataclass_fields__.values():
-        if field._field_type is _FIELD_CLASSVAR:
-            continue
-
-        if field.name in data:
-            value = data[field.name]
-
-        elif field.default is not MISSING:
-            value = field.default
-
-        elif field.default_factory is not MISSING:
-            value = field.default_factory()
-
-        else:
-            continue
-
-        if is_dataclass(field.type):
-            value = fromdict(field.type, value)
-
-        if field.init:
-            init_values[field.name] = value
-        else:
-            non_init_values[field.name] = value
-
-    obj = cls(**init_values)
-    for field, value in non_init_values.items():
-        setattr(obj, field, value)
-
-    return obj
 
 
 def is_mongoclass(obj, /):
@@ -220,14 +171,13 @@ def delete_one(obj, /):
     return type(obj).collection.delete_one({"_id": obj._id})
 
 
-def find_one(cls, /, filter=None, fromdict=fromdict):
+def find_one(cls, /, filter=None):
     """
     Return a single instance that matches the query or None.
 
     Parameters:
         cls: A mongoclass type.
         filter: A dictionary specifying the query to be performed.
-        fromdict: The fromdict function to be used.
 
     Raises:
         TypeError: If the class is not a Mongoclass type.
@@ -241,7 +191,7 @@ def find_one(cls, /, filter=None, fromdict=fromdict):
     document = cls.collection.find_one(filter=filter)
     if document is None:
         return None
-    return fromdict(cls, document)
+    return from_dict(cls, document, Config(check_types=False))
 
 
 def find(cls, /, filter=None, skip=0, limit=0, sort=None):

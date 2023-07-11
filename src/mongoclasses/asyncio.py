@@ -1,4 +1,5 @@
-from .mongoclasses import asdict, fromdict, _is_mongoclass_instance, _is_mongoclass_type
+from dacite import from_dict, Config
+from .mongoclasses import asdict, _is_mongoclass_instance, _is_mongoclass_type
 
 
 async def insert_one(obj, /):
@@ -31,11 +32,11 @@ async def delete_one(obj, /):
     return await type(obj).collection.delete_one({"_id": obj._id})
 
 
-async def find_one(cls, /, filter=None, fromdict=fromdict):
+async def find_one(cls, /, filter=None):
     if not _is_mongoclass_type(cls):
         raise TypeError("Not a mongoclass type.")
 
     document = await cls.collection.find_one(filter=filter)
     if document is None:
         return None
-    return fromdict(cls, document)
+    return from_dict(cls, document, Config(check_types=False))
