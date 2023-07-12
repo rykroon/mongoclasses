@@ -121,6 +121,8 @@ async def test_find(Foo):
     cursor = find(Foo, {})
     objects = [foo async for foo in cursor]
     assert len(objects) == 3
+    for obj in objects:
+        assert isinstance(obj, Foo)
 
 
 @pytest.mark.asyncio

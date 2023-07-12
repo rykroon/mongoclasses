@@ -2,9 +2,10 @@ from abc import ABCMeta
 from typing import Any, ClassVar, Literal, TypeGuard, TYPE_CHECKING
 
 from pymongo.collection import Collection
-from pymongo.cursor import Cursor
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
-from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorCursor
+from motor.motor_asyncio import AsyncIOMotorCollection
+
+from .utils import Cursor, AsyncCursor
 
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
@@ -56,4 +57,4 @@ def find(
     skip: int,
     limit: int,
     sort: list[tuple[str, Literal[1, -1]]] | None,
-) -> AsyncIOMotorCursor | Cursor: ...
+) -> AsyncCursor | Cursor: ...

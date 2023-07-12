@@ -53,10 +53,18 @@ class TestInsertOne:
 
         assert f._id == object_id
         assert Foo.collection.find_one({"_id": f._id}) is not None
+    
+    def test_type_error(self):
+        @dataclass
+        class Foo:
+            ...
+        
+        with pytest.raises(TypeError):
+            insert_one(Foo())
 
 
 class TestUpdateOne:
-    def test_update_one(self, Foo):
+    def test_success(self, Foo):
         f = Foo()
         insert_one(f)
 
@@ -66,7 +74,7 @@ class TestUpdateOne:
         doc = Foo.collection.find_one({"_id": f._id})
         assert doc["name"] == "Fred"
 
-    def test_update_one_with_fields(self, Foo):
+    def test_fields(self, Foo):
         f = Foo()
         insert_one(f)
 
@@ -77,60 +85,77 @@ class TestUpdateOne:
         doc = Foo.collection.find_one({"_id": f._id})
         assert doc["name"] == "Fred"
         assert doc["description"] == ""
-
-
-def test_delete_one(Foo):
-    f = Foo()
-    insert_one(f)
-    delete_one(f)
-
-    assert Foo.collection.find_one({"_id": f._id}) is None
-
-
-def test_find_one(Foo):
-    f = Foo()
-    insert_one(f)
-
-    # Find document that exists
-    result = find_one(Foo, {"_id": f._id})
-    assert result._id == f._id
-
-    # find document that does not exist.
-    result = find_one(Foo, {"_id": "abcdef"})
-    assert result is None
-
-
-def test_find(Foo):
-    f1 = Foo(name="Alice")
-    insert_one(f1)
-
-    f2 = Foo(name="Bob")
-    insert_one(f2)
-
-    f3 = Foo(name="Charlie")
-    insert_one(f3)
-
-    cursor = find(Foo, {})
-    objects = [foo for foo in cursor]
-    assert len(objects) == 3
-
-
-def test_not_a_mongoclass():
-    @dataclass
-    class Foo:
-        ...
     
-    with pytest.raises(TypeError):
-        insert_one(Foo())
-    
-    with pytest.raises(TypeError):
-        update_one(Foo())
-    
-    with pytest.raises(TypeError):
-        delete_one(Foo())
+    def test_type_error(self):
+        @dataclass
+        class Foo:
+            ...
+        
+        with pytest.raises(TypeError):
+            update_one(Foo())
 
-    with pytest.raises(TypeError):
-        find_one(Foo, {})
 
-    with pytest.raises(TypeError):
-        find(Foo, {})
+class TestDeleteOne:
+    def test_success(self, Foo):
+        f = Foo()
+        insert_one(f)
+        delete_one(f)
+
+        assert Foo.collection.find_one({"_id": f._id}) is None
+    
+    def test_type_error(self):
+        @dataclass
+        class Foo:
+            ...
+        
+        with pytest.raises(TypeError):
+            delete_one(Foo())
+
+
+class TestFindOne:
+
+    def test_success(self, Foo):
+        f = Foo()
+        insert_one(f)
+
+        # Find document that exists
+        result = find_one(Foo, {"_id": f._id})
+        assert result._id == f._id
+
+        # find document that does not exist.
+        result = find_one(Foo, {"_id": "abcdef"})
+        assert result is None
+    
+    def test_type_error(self):
+        @dataclass
+        class Foo:
+            ...
+
+        with pytest.raises(TypeError):
+            find_one(Foo)
+
+
+class TestFind:
+    def test_find(self, Foo):
+        f1 = Foo(name="Alice")
+        insert_one(f1)
+
+        f2 = Foo(name="Bob")
+        insert_one(f2)
+
+        f3 = Foo(name="Charlie")
+        insert_one(f3)
+
+        cursor = find(Foo, {})
+        objects = [foo for foo in cursor]
+        assert len(objects) == 3
+        for obj in objects:
+            assert isinstance(obj, Foo)
+
+    def test_type_error(self):
+        @dataclass
+        class Foo:
+            ...
+        
+        with pytest.raises(TypeError):
+            find(Foo, {})

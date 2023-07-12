@@ -9,6 +9,12 @@ from functools import lru_cache
 import inspect
 
 from dacite import from_dict, Config
+from motor.motor_asyncio import AsyncIOMotorCursor
+
+from .utils import Cursor, AsyncCursor
+
+
+DEFAULT_CONFIG = Config(check_types=False)
 
 
 def asdict(obj, include=None, exclude=None):
@@ -191,7 +197,7 @@ def find_one(cls, /, filter=None):
     document = cls.collection.find_one(filter=filter)
     if document is None:
         return None
-    return from_dict(cls, document, Config(check_types=False))
+    return from_dict(cls, document, DEFAULT_CONFIG)
 
 
 def find(cls, /, filter=None, skip=0, limit=0, sort=None):
@@ -201,15 +207,21 @@ def find(cls, /, filter=None, skip=0, limit=0, sort=None):
     Parameters:
         cls: A mongoclass type.
         filter: A dictionary specifying the query to be performed.
+        skip: The number of documents to omit from the start of the result set.
+        limit: The maximum number of results to return.
+        sort: A list of (key, direction) pairs specifying the sort order for this query.
 
     Raises:
         TypeError: If the class is not a Mongoclass type.
 
     Returns:
         A `Cursor` object if the mongoclass's collection is synchronous or an \
-            `AsyncIOMotorCursor` object if the collection is asynchronous.
+            `AsyncCursor` object if the collection is asynchronous.
     """
     if not _is_mongoclass_type(cls):
         raise TypeError("Not a mongoclass type.")
 
-    return cls.collection.find(filter=filter, skip=skip, limit=limit, sort=sort)
+    cursor = cls.collection.find(filter=filter, skip=skip, limit=limit, sort=sort)
+    if isinstance(cursor, AsyncIOMotorCursor):
+        return AsyncCursor(cursor=cursor, dataclass=cls)
+    return Cursor(cursor=cursor, dataclass=cls)
