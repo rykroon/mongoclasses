@@ -2,7 +2,6 @@ from .converters import converter
 from .mongoclasses import _is_mongoclass_instance, _is_mongoclass_type
 
 
-
 async def insert_one(obj, /):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")

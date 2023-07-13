@@ -1,10 +1,4 @@
-from dataclasses import (
-    fields,
-    is_dataclass,
-    _FIELD,
-    _FIELD_CLASSVAR,
-    _is_dataclass_instance,
-)
+from dataclasses import is_dataclass, _FIELD, _FIELD_CLASSVAR
 from functools import lru_cache
 import inspect
 
@@ -12,7 +6,6 @@ from motor.motor_asyncio import AsyncIOMotorCursor
 
 from .converters import converter
 from .cursors import Cursor, AsyncCursor
-
 
 
 def is_mongoclass(obj, /):
