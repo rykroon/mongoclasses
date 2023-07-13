@@ -24,7 +24,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "dacite>=1.8.1, <2",
+  "cattrs==23.1.2, <24",
   "motor>=3.1.1, <4"
 ]
 

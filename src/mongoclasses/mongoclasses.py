@@ -8,63 +8,11 @@ from dataclasses import (
 from functools import lru_cache
 import inspect
 
-from dacite import from_dict, Config
 from motor.motor_asyncio import AsyncIOMotorCursor
 
-from .utils import Cursor, AsyncCursor
+from .converters import converter
+from .cursors import Cursor, AsyncCursor
 
-
-DEFAULT_CONFIG = Config(check_types=False)
-
-
-def asdict(obj, include=None, exclude=None):
-    """
-    Converts a dataclass instance into a dictionary.
-
-    Parameters:
-        obj: A dataclass instance.
-        include: A list of fields to include in the dictionary.
-        exclude: A list of fields to exclude from the dictionary.
-
-    Returns:
-        A dictionary.
-    """
-    if not _is_dataclass_instance(obj):
-        raise TypeError("asdict() should be called on dataclass instances")
-
-    if include is not None and exclude is not None:
-        raise ValueError("include and exclude cannot be used together.")
-
-    result = ((f.name, _asdict(getattr(obj, f.name))) for f in fields(obj))
-
-    if include is not None:
-        result = filter(lambda x: x[0] in include, result)
-
-    elif exclude is not None:
-        result = filter(lambda x: x[0] not in exclude, result)
-
-    return dict(result)
-
-
-def _asdict(value):
-    """
-    This asdict() function makes a few assumptions since it is being used within the
-    context of MongoDB.
-    1) dictionary keys are assumed to be strings.
-    2) tuples, sets, and frozensets are converted into a list (array). since those types
-        do not exist in mongoDB.
-    """
-    if _is_dataclass_instance(value):
-        return {f.name: _asdict(getattr(value, f.name)) for f in fields(value)}
-
-    elif isinstance(value, (list, tuple, set, frozenset)):
-        return [_asdict(i) for i in value]
-
-    elif isinstance(value, dict):
-        return {k: _asdict(v) for k, v in value.items()}
-
-    else:
-        return value
 
 
 def is_mongoclass(obj, /):
@@ -125,7 +73,7 @@ def insert_one(obj, /):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
-    document = asdict(obj)
+    document = converter.unstructure(obj)
     if document["_id"] is None:
         del document["_id"]
 
@@ -152,7 +100,7 @@ def update_one(obj, /, fields=None):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
-    document = asdict(obj, include=fields)
+    document = converter.unstructure(obj)
     return type(obj).collection.update_one(
         filter={"_id": obj._id}, update={"$set": document}
     )
@@ -197,7 +145,7 @@ def find_one(cls, /, filter=None):
     document = cls.collection.find_one(filter=filter)
     if document is None:
         return None
-    return from_dict(cls, document, DEFAULT_CONFIG)
+    return converter.structure(document, cls)
 
 
 def find(cls, /, filter=None, skip=0, limit=0, sort=None):

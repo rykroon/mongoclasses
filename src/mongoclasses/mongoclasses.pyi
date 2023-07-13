@@ -5,7 +5,7 @@ from pymongo.collection import Collection
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
 from motor.motor_asyncio import AsyncIOMotorCollection
 
-from .utils import Cursor, AsyncCursor
+from .cursors import Cursor, AsyncCursor
 
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
@@ -13,12 +13,6 @@ if TYPE_CHECKING:
 class MongoclassInstance(DataclassInstance, metaclass=ABCMeta):
     collection: ClassVar[AsyncIOMotorCollection | Collection]
     _id: Any
-
-
-def asdict(
-    obj: Any, include: list[str] | None, exclude: list[str] | None
-) -> dict[str, Any]:
-    ...
 
 
 def is_mongoclass(

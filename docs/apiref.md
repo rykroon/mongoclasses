@@ -8,9 +8,6 @@
 ::: mongoclasses.is_mongoclass
 ___
 
-::: mongoclasses.asdict
-___
-
 ::: mongoclasses.insert_one
 ___
 
