@@ -1,11 +1,9 @@
 from dataclasses import dataclass
 
-from dacite import from_dict, Config
 from pymongo.cursor import Cursor as PymongoCursor
 from motor.motor_asyncio import AsyncIOMotorCursor
 
-
-DEFAULT_CONFIG = Config(check_types=False)
+from .converters import converter
 
 
 @dataclass(frozen=True)
@@ -18,7 +16,7 @@ class Cursor:
 
     def __next__(self):
         document = self.cursor.next()
-        return from_dict(self.dataclass, document, config=DEFAULT_CONFIG)
+        return converter.structure(document, self.dataclass)
 
 
 @dataclass(frozen=True)
@@ -31,4 +29,4 @@ class AsyncCursor:
 
     async def __anext__(self):
         document = await self.cursor.next()
-        return from_dict(self.dataclass, document, config=DEFAULT_CONFIG)
+        return converter.structure(document, self.dataclass)
