@@ -1,4 +1,5 @@
 from . import asyncio
+from .converters import converter
 from .mongoclasses import (
     is_mongoclass,
     insert_one,
@@ -11,6 +12,7 @@ from .mongoclasses import (
 
 __all__ = [
     "asyncio",
+    "converter",
     "is_mongoclass",
     "_is_mongoclass_instance",
     # "_is_mongoclass_type",
