@@ -94,6 +94,8 @@ def update_one(obj, /, fields=None):
         raise TypeError("Not a mongoclass instance.")
 
     document = converter.unstructure(obj)
+    if fields is not None:
+        document = {k: v for k, v in document.items() if k in fields}
     return type(obj).collection.update_one(
         filter={"_id": obj._id}, update={"$set": document}
     )
