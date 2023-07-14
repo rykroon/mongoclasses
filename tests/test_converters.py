@@ -64,4 +64,5 @@ class TestConversions:
         u = uuid4()
         assert converter.structure(u, UUID) == u
         assert converter.structure(str(u), UUID) == u
+        assert converter.structure(u.int, UUID) == u
         assert converter.structure(Binary.from_uuid(u), UUID) == u
