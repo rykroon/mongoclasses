@@ -73,6 +73,11 @@ class Decimal128Hook:
 register_hook(converter, Decimal128Hook)
 
 
+# Note:
+# Nothing needs to be done for Int64 since it is a subclass of int.
+# Although it might be worth adding a test just to make sure that never changes.
+
+
 class ObjectIdHook:
     type_ = ObjectId
 
