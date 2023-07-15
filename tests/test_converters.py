@@ -3,7 +3,7 @@ from decimal import Decimal
 import re
 from uuid import UUID, uuid4
 
-from bson import Binary, Decimal128, ObjectId, Regex, SON
+from bson import Binary, DatetimeMS, Decimal128, ObjectId, Regex, SON
 import pytest
 
 from mongoclasses import converter
@@ -16,6 +16,14 @@ class TestConversions:
         assert converter.structure(d, datetime) == d
         assert converter.structure(d.isoformat(), datetime) == d
         assert converter.structure(d.timestamp(), datetime) == d
+
+        # converting from/ to DateTimeMS rounds to the nearest millisecond.
+        dtms = converter.structure(DatetimeMS(d), datetime)
+        assert dtms.date() == d.date()
+        assert dtms.hour == d.hour
+        assert dtms.minute == d.minute
+        assert dtms.second == d.second
+
         with pytest.raises(TypeError):
             converter.structure(None, datetime)
 
@@ -47,9 +55,9 @@ class TestConversions:
             converter.structure(None, Decimal128)
 
     def test_objectid(self):
-        o = ObjectId()
-        assert converter.structure(o, ObjectId) == o
-        assert converter.structure(str(o), ObjectId) == o
+        oid = ObjectId()
+        assert converter.structure(oid, ObjectId) == oid
+        assert converter.structure(str(oid), ObjectId) == oid
 
     def test_pattern(self):
         p = re.compile(".*")

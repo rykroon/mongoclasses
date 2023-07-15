@@ -3,7 +3,7 @@ from decimal import Decimal
 from re import Pattern
 from uuid import UUID
 
-from bson import Binary, Decimal128, ObjectId, Regex, SON
+from bson import Binary, DatetimeMS, Decimal128, ObjectId, Regex, SON
 import cattrs
 
 converter = cattrs.Converter()
@@ -28,6 +28,8 @@ class DatetimeHook:
             return datetime.fromtimestamp(value)
         if isinstance(value, str):
             return datetime.fromisoformat(value)
+        if isinstance(value, DatetimeMS):
+            return value.as_datetime()
         raise TypeError(f"Could not convert value '{value}' to type '{type_}'.")
 
 
