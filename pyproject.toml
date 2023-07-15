@@ -54,6 +54,8 @@ python="3.11"
 dependencies = [
   "mypy"
 ]
+[tool.hatch.envs.mypy.scripts]
+strict = "mypy --strict src/mongoclasses"
 
 [tool.hatch.envs.docs]
 python="3.11"
