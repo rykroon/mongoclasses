@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "mongoclasses"
 dynamic = ["version"]
-description = ''
+description = "A lightweight tool for performing MongoDB operations on python dataclasses."
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
