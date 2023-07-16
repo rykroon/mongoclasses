@@ -1,5 +1,6 @@
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
+from enum import Enum
 from re import Pattern
 from uuid import UUID
 
@@ -15,6 +16,24 @@ def register_hook(converter, hook):
     
     if hasattr(hook, "to_db"):
         converter.register_unstructure_hook(hook.type_, hook.to_db)
+
+
+class DateHook:
+    type_ = date
+
+    @staticmethod
+    def from_db(value, type_):
+        if isinstance(value, date):
+            return value
+        
+        # Attempt to convert to datetime, then call date() to convert to a date object.
+        return DatetimeHook.from_db(value, type_).date()
+
+    @staticmethod
+    def to_db(value):
+        # MongoDB does not accept python date objects so it must be converted into a
+        # datetime object.
+        return datetime(year=value.year, month=value.month, day=value.day)
 
 
 class DatetimeHook:
@@ -71,6 +90,16 @@ class Decimal128Hook:
         raise TypeError(f"Could not convert value '{value}' to type '{type_}'.")
 
 register_hook(converter, Decimal128Hook)
+
+
+class EnumHook:
+    type_ = Enum
+
+    @staticmethod
+    def to_db(value):
+        return value.value
+
+register_hook(converter, EnumHook)
 
 
 # Note:
