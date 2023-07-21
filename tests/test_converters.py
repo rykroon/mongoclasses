@@ -10,6 +10,7 @@ import pytest
 from mongoclasses import converter
 from mongoclasses.converters import register_db_name_overrides
 
+import logging
 
 def test_register_db_name_overrides():
     @dataclass
@@ -25,10 +26,14 @@ def test_register_db_name_overrides():
 class TestConversions:
 
     def test_date(self):
+        
         d = date.today()
         assert converter.unstructure(d) == datetime(
             year=d.year, month=d.month, day=d.day
         )
+
+        logging.warning(converter.structure(datetime.utcnow(), date))
+        assert converter.structure(datetime.utcnow(), date) == date.today()
 
     def test_datetime(self):
         d = datetime.utcnow()

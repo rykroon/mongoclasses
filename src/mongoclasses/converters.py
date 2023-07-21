@@ -12,6 +12,7 @@ from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn, overrid
 
 from .utils import _get_db_name
 
+import logging
 
 converter = cattrs.Converter()
 
@@ -51,10 +52,7 @@ class DateHook:
 
     @staticmethod
     def from_db(value, type_):
-        if isinstance(value, date):
-            return value
-
-        # Attempt to convert to datetime, then call date() to convert to a date object.
+        logging.warning("DateHook.from_db()")
         return DatetimeHook.from_db(value, type_).date()
 
     @staticmethod
@@ -71,6 +69,8 @@ class DatetimeHook:
 
     @staticmethod
     def from_db(value, type_):
+        logging.warning("DatetimeHook.from_db()")
+
         if isinstance(value, datetime):
             return value
         if isinstance(value, (int, float)):
@@ -122,14 +122,14 @@ class Decimal128Hook:
 register_hook(converter, Decimal128Hook)
 
 
-class EnumHook:
-    type_ = Enum
+# class EnumHook:
+#     type_ = Enum
 
-    @staticmethod
-    def to_db(value):
-        return value.value
+#     @staticmethod
+#     def to_db(value):
+#         return value.value
 
-register_hook(converter, EnumHook)
+# register_hook(converter, EnumHook)
 
 
 # Note:
