@@ -1,7 +1,6 @@
 from dataclasses import fields
 from datetime import datetime, date
 from decimal import Decimal
-from functools import lru_cache
 from re import Pattern
 from uuid import UUID
 
@@ -9,14 +8,11 @@ from bson import Binary, DatetimeMS, Decimal128, ObjectId, Regex, SON
 import cattrs
 from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn, override
 
-from .utils import _get_db_name
-
 import logging
 
 converter = cattrs.Converter()
 
 
-@lru_cache
 def register_db_name_overrides(cls):
     """
     Generates the appropriate struct/unstruct functions required to rename the
@@ -24,18 +20,17 @@ def register_db_name_overrides(cls):
     """
     kwargs = {}
     for field in fields(cls):
-        db_name = _get_db_name(field)
+        db_name = field.metadata.get("mongoclasses", {}).get("db_name", field.name)
         if db_name != field.name:
             kwargs[field.name] = override(rename=db_name)
 
     if not kwargs:
-        return False
+        return
 
     unstruct_func = make_dict_unstructure_fn(cls, converter, **kwargs)
     struct_func = make_dict_structure_fn(cls, converter, **kwargs)
     converter.register_unstructure_hook(cls, unstruct_func)
     converter.register_structure_hook(cls, struct_func)
-    return True
 
 
 def register_hook(converter, hook):

@@ -1,12 +1,12 @@
 from dataclasses import dataclass, field
-from typing import ClassVar
 
 from bson import ObjectId
 from pymongo import MongoClient
-from pymongo.collection import Collection
 import pytest
 
-from mongoclasses import delete_one, find, find_one, insert_one, update_one
+from mongoclasses import (
+    mongoclass, _get_collection, delete_one, find, find_one, insert_one, update_one
+)
 
 
 @pytest.fixture
@@ -20,16 +20,9 @@ def drop_database(client):
 
 
 @pytest.fixture
-def test_collection(client):
-    db = client["test"]
-    return db["test_collection"]
-
-
-@pytest.fixture
-def Foo(test_collection):
-    @dataclass
+def Foo(client):
+    @mongoclass(client["test"])
     class Foo:
-        collection: ClassVar[Collection] = test_collection
         _id: ObjectId = field(default_factory=ObjectId)
         name: str = ""
         description: str = ""
@@ -44,7 +37,7 @@ class TestInsertOne:
         f = Foo()
         insert_one(f)
 
-        assert Foo.collection.find_one(f._id) is not None
+        assert _get_collection(Foo).find_one(f._id) is not None
 
     def test_type_error(self):
         @dataclass
@@ -63,7 +56,7 @@ class TestUpdateOne:
         f.name = "Fred"
         update_one(f)
 
-        doc = Foo.collection.find_one(f._id)
+        doc = _get_collection(Foo).find_one(f._id)
         assert doc["name"] == "Fred"
 
     def test_fields(self, Foo):
@@ -74,7 +67,7 @@ class TestUpdateOne:
         f.description = "Hello World"
         update_one(f, fields=["name"])
 
-        doc = Foo.collection.find_one(f._id)
+        doc = _get_collection(Foo).find_one(f._id)
         assert doc["name"] == "Fred"
         assert doc["description"] == ""
     
@@ -93,7 +86,7 @@ class TestDeleteOne:
         insert_one(f)
         delete_one(f)
 
-        assert Foo.collection.find_one(f._id) is None
+        assert _get_collection(Foo).find_one(f._id) is None
     
     def test_type_error(self):
         @dataclass
