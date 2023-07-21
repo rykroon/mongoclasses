@@ -1,7 +1,6 @@
 from dataclasses import fields
 from datetime import datetime, date
 from decimal import Decimal
-from enum import Enum
 from functools import lru_cache
 from re import Pattern
 from uuid import UUID
@@ -120,16 +119,6 @@ class Decimal128Hook:
         raise TypeError(f"Could not convert value '{value}' to type '{type_}'.")
 
 register_hook(converter, Decimal128Hook)
-
-
-# class EnumHook:
-#     type_ = Enum
-
-#     @staticmethod
-#     def to_db(value):
-#         return value.value
-
-# register_hook(converter, EnumHook)
 
 
 # Note:
