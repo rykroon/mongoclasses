@@ -1,6 +1,9 @@
-from dataclasses import is_dataclass, _FIELD, _FIELD_CLASSVAR
+from dataclasses import is_dataclass, _FIELD_CLASSVAR
 from functools import lru_cache
 import inspect
+
+from .converters import register_db_name_overrides
+from .utils import _get_id_field
 
 
 def is_mongoclass(obj, /):
@@ -23,21 +26,19 @@ def _is_mongoclass_instance(obj, /):
 
 
 @lru_cache
-def _is_mongoclass_type(obj, /):
-    if not is_dataclass(obj):
+def _is_mongoclass_type(type_, /):
+    if not is_dataclass(type_):
         return False
 
-    dataclass_fields = getattr(obj, "__dataclass_fields__")
-    if "_id" not in dataclass_fields:
-        return False
-
-    if dataclass_fields["_id"]._field_type is not _FIELD:
-        return False
-
+    dataclass_fields = getattr(type_, "__dataclass_fields__")
     if "collection" not in dataclass_fields:
         return False
 
     if dataclass_fields["collection"]._field_type is not _FIELD_CLASSVAR:
         return False
 
+    if _get_id_field(type_) is None:
+        return False
+
+    register_db_name_overrides(type_)
     return True

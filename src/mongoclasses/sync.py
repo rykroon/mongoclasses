@@ -2,7 +2,7 @@ from motor.motor_asyncio import AsyncIOMotorCursor
 
 from .converters import converter
 from .cursors import AsyncCursor, Cursor
-from .mongoclasses import _is_mongoclass_instance, _is_mongoclass_type
+from .mongoclasses import _is_mongoclass_instance, _is_mongoclass_type, _get_id_field
 
 
 def insert_one(obj, /):
@@ -24,11 +24,9 @@ def insert_one(obj, /):
         raise TypeError("Not a mongoclass instance.")
 
     document = converter.unstructure(obj)
-    if document["_id"] is None:
-        del document["_id"]
-
     result = type(obj).collection.insert_one(document)
-    obj._id = result.inserted_id
+    id_field = _get_id_field(type(obj))
+    setattr(obj, id_field.name, result.inserted_id)
     return result
 
 
@@ -53,8 +51,11 @@ def update_one(obj, /, fields=None):
     document = converter.unstructure(obj)
     if fields is not None:
         document = {k: v for k, v in document.items() if k in fields}
+
+    id_field = _get_id_field(type(obj))
+    id_value = getattr(obj, id_field.name)
     return type(obj).collection.update_one(
-        filter={"_id": obj._id}, update={"$set": document}
+        filter={"_id": id_value}, update={"$set": document}
     )
 
 
@@ -74,7 +75,9 @@ def delete_one(obj, /):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
-    return type(obj).collection.delete_one({"_id": obj._id})
+    id_field = _get_id_field(type(obj))
+    id_value = getattr(obj, id_field.name)
+    return type(obj).collection.delete_one({"_id": id_value})
 
 
 def find_one(cls, /, filter=None):

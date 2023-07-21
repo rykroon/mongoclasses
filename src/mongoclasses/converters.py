@@ -1,13 +1,41 @@
+from dataclasses import fields
 from datetime import datetime, date
 from decimal import Decimal
 from enum import Enum
+from functools import lru_cache
 from re import Pattern
 from uuid import UUID
 
 from bson import Binary, DatetimeMS, Decimal128, ObjectId, Regex, SON
 import cattrs
+from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn, override
+
+from .utils import _get_db_name
+
 
 converter = cattrs.Converter()
+
+
+@lru_cache
+def register_db_name_overrides(cls):
+    """
+    Generates the appropriate struct/unstruct functions required to rename the
+    dataclass fields.
+    """
+    kwargs = {}
+    for field in fields(cls):
+        db_name = _get_db_name(field)
+        if db_name != field.name:
+            kwargs[field.name] = override(rename=db_name)
+
+    if not kwargs:
+        return False
+
+    unstruct_func = make_dict_unstructure_fn(cls, converter, **kwargs)
+    struct_func = make_dict_structure_fn(cls, converter, **kwargs)
+    converter.register_unstructure_hook(cls, unstruct_func)
+    converter.register_structure_hook(cls, struct_func)
+    return True
 
 
 def register_hook(converter, hook):
@@ -25,7 +53,7 @@ class DateHook:
     def from_db(value, type_):
         if isinstance(value, date):
             return value
-        
+
         # Attempt to convert to datetime, then call date() to convert to a date object.
         return DatetimeHook.from_db(value, type_).date()
 
@@ -34,6 +62,8 @@ class DateHook:
         # MongoDB does not accept python date objects so it must be converted into a
         # datetime object.
         return datetime(year=value.year, month=value.month, day=value.day)
+
+register_hook(converter, DateHook)
 
 
 class DatetimeHook:
