@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import ClassVar, Optional
+from dataclasses import dataclass, field
+from typing import ClassVar
 
 from bson import ObjectId
 from pymongo import MongoClient
@@ -30,7 +30,7 @@ def Foo(test_collection):
     @dataclass
     class Foo:
         collection: ClassVar[Collection] = test_collection
-        _id: Optional[ObjectId] = None
+        _id: ObjectId = field(default_factory=ObjectId)
         name: str = ""
         description: str = ""
 
@@ -38,22 +38,14 @@ def Foo(test_collection):
 
 
 class TestInsertOne:
-    def test_insert_one_without_id(self, Foo):
+
+    def test_insert_one(self, Foo):
+        # test scenario where an _id is generated before insertion.
         f = Foo()
         insert_one(f)
 
-        assert f._id is not None
-        assert Foo.collection.find_one({"_id": f._id}) is not None
+        assert Foo.collection.find_one(f._id) is not None
 
-    def test_insert_one_with_id(self, Foo):
-        # test scenario where an _id is generated before insertion.
-        object_id = ObjectId()
-        f = Foo(_id=object_id)
-        insert_one(f)
-
-        assert f._id == object_id
-        assert Foo.collection.find_one({"_id": f._id}) is not None
-    
     def test_type_error(self):
         @dataclass
         class Foo:
@@ -71,7 +63,7 @@ class TestUpdateOne:
         f.name = "Fred"
         update_one(f)
 
-        doc = Foo.collection.find_one({"_id": f._id})
+        doc = Foo.collection.find_one(f._id)
         assert doc["name"] == "Fred"
 
     def test_fields(self, Foo):
@@ -82,7 +74,7 @@ class TestUpdateOne:
         f.description = "Hello World"
         update_one(f, fields=["name"])
 
-        doc = Foo.collection.find_one({"_id": f._id})
+        doc = Foo.collection.find_one(f._id)
         assert doc["name"] == "Fred"
         assert doc["description"] == ""
     
@@ -101,7 +93,7 @@ class TestDeleteOne:
         insert_one(f)
         delete_one(f)
 
-        assert Foo.collection.find_one({"_id": f._id}) is None
+        assert Foo.collection.find_one(f._id) is None
     
     def test_type_error(self):
         @dataclass

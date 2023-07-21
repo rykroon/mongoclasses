@@ -1,4 +1,5 @@
-from datetime import datetime
+from dataclasses import dataclass, field
+from datetime import datetime, date
 from decimal import Decimal
 import re
 from uuid import UUID, uuid4
@@ -7,9 +8,27 @@ from bson import Binary, DatetimeMS, Decimal128, ObjectId, Regex, SON
 import pytest
 
 from mongoclasses import converter
+from mongoclasses.converters import register_db_name_overrides
+
+
+def test_register_db_name_overrides():
+    @dataclass
+    class Foo:
+        name: str = field(metadata={"mongoclasses": {"db_name": "first_name"}})
+    
+    register_db_name_overrides(Foo)
+
+    f = Foo(name="Fred")
+    assert converter.unstructure(f) == {"first_name": "Fred"}
 
 
 class TestConversions:
+
+    def test_date(self):
+        d = date.today()
+        assert converter.unstructure(d) == datetime(
+            year=d.year, month=d.month, day=d.day
+        )
 
     def test_datetime(self):
         d = datetime.utcnow()
