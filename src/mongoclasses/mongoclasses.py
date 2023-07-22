@@ -5,8 +5,22 @@ from .converters import register_db_name_overrides
 
 
 def mongoclass(db, collection_name=None):
+    """
+    Parameters:
+        db: A pymongo Database or motor AsyncioMotorDatabase object.
+        collection_name: Optional collection name. Defaults to the class name is all
+        lowercase.
+
+    Raises:
+        TypeError if object is not a class, or does not have an _id field.
+
+    Returns:
+        A class decorator that transforms the class into a mongoclass.
+    """
+
     def wrapper(cls):
         return _process_class(cls, db, collection_name)
+
     return wrapper
 
 
@@ -32,7 +46,7 @@ def _process_class(cls, db, collection_name):
 
     else:
         raise TypeError("Must define an '_id' field.")
-    
+
     register_db_name_overrides(cls)
     return cls
 
@@ -61,4 +75,3 @@ def is_mongoclass(obj, /):
     """
     cls = obj if isinstance(obj, type) else type(obj)
     return hasattr(cls, "__mongoclass_collection__")
-
