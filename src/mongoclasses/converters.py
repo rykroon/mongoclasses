@@ -36,7 +36,7 @@ def register_db_name_overrides(cls):
 def register_hook(converter, hook):
     if hasattr(hook, "from_db"):
         converter.register_structure_hook(hook.type_, hook.from_db)
-    
+
     if hasattr(hook, "to_db"):
         converter.register_unstructure_hook(hook.type_, hook.to_db)
 
@@ -54,6 +54,7 @@ class DateHook:
         # MongoDB does not accept python date objects so it must be converted into a
         # datetime object.
         return datetime(year=value.year, month=value.month, day=value.day)
+
 
 register_hook(converter, DateHook)
 
@@ -99,6 +100,7 @@ class DecimalHook:
         # Decimal values are not allowed in pymongo. Must be Decimal128.
         return Decimal128(value)
 
+
 register_hook(converter, DecimalHook)
 
 
@@ -112,6 +114,7 @@ class Decimal128Hook:
         elif isinstance(value, Decimal):
             return Decimal128(value)
         raise TypeError(f"Could not convert value '{value}' to type '{type_}'.")
+
 
 register_hook(converter, Decimal128Hook)
 
@@ -128,6 +131,7 @@ class ObjectIdHook:
     def from_db(value, type_):
         return ObjectId(value)
 
+
 register_hook(converter, ObjectIdHook)
 
 
@@ -142,6 +146,7 @@ class PatternHook:
             return value.try_compile()
         raise TypeError(f"Could not convert value '{value}' to type '{type_}'.")
 
+
 register_hook(converter, PatternHook)
 
 
@@ -155,7 +160,8 @@ class RegexHook:
         elif isinstance(value, Pattern):
             return Regex.from_native(value)
         raise TypeError(f"Could not convert value '{value}' to type '{type_}'.")
-        
+
+
 register_hook(converter, RegexHook)
 
 
@@ -165,6 +171,7 @@ class SONHook:
     @staticmethod
     def from_db(value, type_):
         return SON(value)
+
 
 register_hook(converter, SONHook)
 
@@ -183,5 +190,6 @@ class UUIDHook:
         elif isinstance(value, str):
             return UUID(hex=value)
         raise TypeError(f"Could not convert value '{value}' to type '{type_}'.")
+
 
 register_hook(converter, UUIDHook)

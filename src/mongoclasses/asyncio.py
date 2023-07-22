@@ -1,6 +1,9 @@
 from .converters import converter
 from .mongoclasses import (
-    is_mongoclass, _is_mongoclass_instance, _get_collection, _get_id_field
+    is_mongoclass,
+    _is_mongoclass_instance,
+    _get_collection,
+    _get_id_field,
 )
 
 

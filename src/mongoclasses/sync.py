@@ -3,7 +3,10 @@ from motor.motor_asyncio import AsyncIOMotorCursor
 from .converters import converter
 from .cursors import AsyncCursor, Cursor
 from .mongoclasses import (
-    is_mongoclass, _is_mongoclass_instance, _get_id_field, _get_collection
+    is_mongoclass,
+    _is_mongoclass_instance,
+    _get_id_field,
+    _get_collection,
 )
 
 
@@ -58,9 +61,7 @@ def update_one(obj, /, fields=None):
     id_field = _get_id_field(obj)
     id_value = getattr(obj, id_field.name)
     collection = _get_collection(obj)
-    return collection.update_one(
-        filter={"_id": id_value}, update={"$set": document}
-    )
+    return collection.update_one(filter={"_id": id_value}, update={"$set": document})
 
 
 def delete_one(obj, /):
