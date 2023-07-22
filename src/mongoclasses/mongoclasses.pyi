@@ -20,4 +20,13 @@ def mongoclass(
 
 def is_mongoclass(
     obj: Any, /
-) -> TypeGuard[MongoclassInstance | type[MongoclassInstance]]: ...
+) -> TypeGuard[MongoclassInstance | type[MongoclassInstance]]:
+    pass
+
+def _is_mongoclass_instance(obj: Any) -> TypeGuard[MongoclassInstance]:
+    pass
+
+def _get_collection(
+    obj: MongoclassInstance | type[MongoclassInstance],
+) -> Collection | AsyncIOMotorCollection:
+    pass
