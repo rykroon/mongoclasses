@@ -117,7 +117,8 @@ def find(cls, /, filter=None, skip=0, limit=0, sort=None):
         filter: A dictionary specifying the query to be performed.
         skip: The number of documents to omit from the start of the result set.
         limit: The maximum number of results to return.
-        sort: A list of (key, direction) pairs specifying the sort order for this query.
+        sort: A list of fields to sort by. If field is prepended with a dash "-", then \
+            it will be sorted in descending order. Otherwise ascending.
 
     Raises:
         TypeError: If the class is not a Mongoclass type.
@@ -128,6 +129,9 @@ def find(cls, /, filter=None, skip=0, limit=0, sort=None):
     """
     if not is_mongoclass(cls):
         raise TypeError("Not a mongoclass.")
+
+    if sort is not None:
+        sort = [(f[1:], -1) if f.startswith("-") else (f, 1) for f in sort]
 
     collection = _get_collection(cls)
     cursor = collection.find(filter=filter, skip=skip, limit=limit, sort=sort)

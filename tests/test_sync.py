@@ -136,6 +136,38 @@ class TestFind:
         assert len(objects) == 3
         for obj in objects:
             assert isinstance(obj, Foo)
+    
+    def test_sort_ascending(self, Foo):
+        f2 = Foo(name="Bob")
+        insert_one(f2)
+
+        f1 = Foo(name="Alice")
+        insert_one(f1)
+
+        f3 = Foo(name="Charlie")
+        insert_one(f3)
+
+        cursor = find(Foo, {}, sort=["name"])
+        objects = [foo for foo in cursor]
+        assert objects[0].name == "Alice"
+        assert objects[1].name == "Bob"
+        assert objects[2].name == "Charlie"
+
+    def test_sort_descending(self, Foo):
+        f2 = Foo(name="Bob")
+        insert_one(f2)
+
+        f1 = Foo(name="Alice")
+        insert_one(f1)
+
+        f3 = Foo(name="Charlie")
+        insert_one(f3)
+
+        cursor = find(Foo, {}, sort=["-name"])
+        objects = [foo for foo in cursor]
+        assert objects[0].name == "Charlie"
+        assert objects[1].name == "Bob"
+        assert objects[2].name == "Alice"
 
     def test_type_error(self):
         @dataclass
