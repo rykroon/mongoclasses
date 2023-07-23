@@ -184,7 +184,7 @@ class UUIDHook:
         if isinstance(value, UUID):
             return value
         elif isinstance(value, Binary):
-            return Binary.as_uuid(value)
+            return value.as_uuid(value.subtype)
         elif isinstance(value, int):
             return UUID(int=value)
         elif isinstance(value, str):
