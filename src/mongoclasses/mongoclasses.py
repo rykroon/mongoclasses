@@ -6,9 +6,12 @@ from .converters import register_db_name_overrides
 
 def mongoclass(db, collection_name=None):
     """
+    Transforms a class into a Mongoclass. If the class isn't already a dataclass then \
+    it will transform the class into a dataclass as well.
+
     Parameters:
         db: A pymongo Database or motor AsyncioMotorDatabase object.
-        collection_name: Optional collection name. Defaults to the class name is all
+        collection_name: The name of the collection. Defaults to the class name in all \
         lowercase.
 
     Raises:

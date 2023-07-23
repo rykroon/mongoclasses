@@ -13,8 +13,6 @@ from .mongoclasses import (
 def insert_one(obj, /):
     """
     Inserts the object into the database.
-    If `_id is None` it will be removed from the document before insertion and the
-    new inserted id will be added to the object.
 
     Parameters:
         obj: A mongoclass instance.
