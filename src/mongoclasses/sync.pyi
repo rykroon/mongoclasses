@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Any
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
 from .cursors import Cursor, AsyncCursor
 from .mongoclasses import MongoclassInstance
@@ -19,5 +19,5 @@ def find(
     filter: dict[str, Any] | None,
     skip: int,
     limit: int,
-    sort: list[tuple[str, Literal[1, -1]]] | None,
+    sort: list[str] | None,
 ) -> AsyncCursor | Cursor: ...
