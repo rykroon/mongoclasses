@@ -124,6 +124,24 @@ register_hook(converter, Decimal128Hook)
 # Although it might be worth adding a test just to make sure that never changes.
 
 
+class FrozensetHook:
+    type_ = frozenset
+
+    @staticmethod
+    def from_db(value, type_):
+        if isinstance(value, frozenset):
+            return value
+        elif isinstance(value, (list, tuple, set)):
+            return frozenset(value)
+
+    @staticmethod
+    def to_db(value):
+        return list(value)
+
+
+register_hook(converter, FrozensetHook)
+
+
 class ObjectIdHook:
     type_ = ObjectId
 
@@ -163,6 +181,24 @@ class RegexHook:
 
 
 register_hook(converter, RegexHook)
+
+
+class SetHook:
+    type_ = set
+
+    @staticmethod
+    def from_db(value, type_):
+        if isinstance(value, set):
+            return value
+        elif isinstance(value, (list, tuple, frozenset)):
+            return set(value)
+
+    @staticmethod
+    def to_db(value):
+        return list(value)
+
+
+register_hook(converter, SetHook)
 
 
 class SONHook:

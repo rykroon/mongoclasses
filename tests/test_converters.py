@@ -77,6 +77,15 @@ class TestConversions:
 
         with pytest.raises(TypeError):
             converter.structure(None, Decimal128)
+    
+    def test_frozenset(self):
+        f = frozenset({1, 2, 3, 4, 5})
+        lst = [1, 2, 3, 4, 5]
+
+        assert converter.unstructure(f) == lst
+
+        assert converter.structure(f, frozenset) == f
+        assert converter.structure(lst, frozenset) == f
 
     def test_objectid(self):
         oid = ObjectId()
@@ -100,6 +109,15 @@ class TestConversions:
 
         with pytest.raises(TypeError):
             converter.structure(None, Regex)
+    
+    def test_set(self):
+        s = set({1, 2, 3, 4, 5})
+        lst = [1, 2, 3, 4, 5]
+
+        assert converter.unstructure(s) == lst
+
+        assert converter.structure(s, set) == s
+        assert converter.structure(lst, set) == s
 
     def test_son(self):
         s = SON({"a": 1})
