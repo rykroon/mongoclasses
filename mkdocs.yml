@@ -17,7 +17,7 @@ theme:
       toggle:
         icon: 'material/brightness-7'
         name: 'Switch to dark mode'
-  
+
     - scheme: 'slate'
       primary: green
       accent: green
@@ -37,6 +37,7 @@ repo_url: https://github.com/rykroon/mongoclasses/
 nav:
   - Introduction: index.md
   - API Reference: apiref.md
+  - Conversions: conversions.md
 
 
 markdown_extensions:
