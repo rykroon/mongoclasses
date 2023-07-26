@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from bson import ObjectId
 import pytest
 import pytest_asyncio
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+from motor.motor_asyncio import AsyncIOMotorClient
 
 from mongoclasses import mongoclass, _get_collection, find
 from mongoclasses.asyncio import delete_one, find_one, insert_one, update_one
