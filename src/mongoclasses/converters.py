@@ -13,16 +13,16 @@ import logging
 converter = cattrs.Converter()
 
 
-def register_db_name_overrides(cls):
+def register_db_field_overrides(cls):
     """
     Generates the appropriate struct/unstruct functions required to rename the
     dataclass fields.
     """
     kwargs = {}
     for field in fields(cls):
-        db_name = field.metadata.get("mongoclasses", {}).get("db_name", field.name)
-        if db_name != field.name:
-            kwargs[field.name] = override(rename=db_name)
+        db_field = field.metadata.get("mongoclasses", {}).get("db_field", field.name)
+        if db_field != field.name:
+            kwargs[field.name] = override(rename=db_field)
 
     if not kwargs:
         return

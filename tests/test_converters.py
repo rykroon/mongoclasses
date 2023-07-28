@@ -8,16 +8,16 @@ from bson import Binary, DatetimeMS, Decimal128, ObjectId, Regex, SON
 import pytest
 
 from mongoclasses import converter
-from mongoclasses.converters import register_db_name_overrides
+from mongoclasses.converters import register_db_field_overrides
 
 import logging
 
-def test_register_db_name_overrides():
+def test_register_db_field_overrides():
     @dataclass
     class Foo:
-        name: str = field(metadata={"mongoclasses": {"db_name": "first_name"}})
+        name: str = field(metadata={"mongoclasses": {"db_field": "first_name"}})
     
-    register_db_name_overrides(Foo)
+    register_db_field_overrides(Foo)
 
     f = Foo(name="Fred")
     assert converter.unstructure(f) == {"first_name": "Fred"}
