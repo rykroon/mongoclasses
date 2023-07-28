@@ -1,10 +1,11 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, date
 from decimal import Decimal
 import re
 from uuid import UUID, uuid4
 
 from bson import Binary, DatetimeMS, Decimal128, ObjectId, Regex, SON
+from cattrs.gen import override
 import pytest
 
 from mongoclasses import converter
@@ -15,9 +16,9 @@ import logging
 def test_register_db_field_overrides():
     @dataclass
     class Foo:
-        name: str = field(metadata={"mongoclasses": {"db_field": "first_name"}})
-    
-    register_db_field_overrides(Foo)
+        name: str
+
+    register_db_field_overrides(Foo, {"name": override(rename="first_name")})
 
     f = Foo(name="Fred")
     assert converter.unstructure(f) == {"first_name": "Fred"}

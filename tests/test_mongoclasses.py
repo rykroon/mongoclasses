@@ -40,15 +40,15 @@ class TestMongoclass:
         @mongoclass(db=client["test"])
         class MyClass:
             _id: int
-        
-        assert MyClass.__mongoclass_collection__.name == "myclass"
+
+        assert MyClass.__mongoclass_config__.collection.name == "myclass"
     
     def test_custom_collection_name(self, client):
         @mongoclass(db=client["test"], collection_name="my_class")
         class MyClass:
             _id: int
         
-        assert MyClass.__mongoclass_collection__.name == "my_class"
+        assert MyClass.__mongoclass_config__.collection.name == "my_class"
 
 
 class TestIsMongoclass:
