@@ -13,6 +13,7 @@ from mongoclasses.converters import register_db_field_overrides
 
 import logging
 
+
 def test_register_db_field_overrides():
     @dataclass
     class Foo:
@@ -25,16 +26,18 @@ def test_register_db_field_overrides():
 
 
 class TestConversions:
-
     def test_date(self):
-        
-        d = date.today()
+        d = date(year=2023, month=1, day=1)
         assert converter.unstructure(d) == datetime(
             year=d.year, month=d.month, day=d.day
         )
 
-        logging.warning(converter.structure(datetime.utcnow(), date))
-        assert converter.structure(datetime.utcnow(), date) == date.today()
+        assert (
+            converter.structure(
+                datetime(year=2023, month=1, day=1, hour=12, minute=30, second=30), date
+            )
+            == d
+        )
 
     def test_datetime(self):
         d = datetime.utcnow()
@@ -69,7 +72,7 @@ class TestConversions:
 
         with pytest.raises(TypeError):
             converter.structure(None, Decimal)
-    
+
     def test_decimal128(self):
         d = Decimal("1.23")
         d128 = Decimal128("1.23")
@@ -78,7 +81,7 @@ class TestConversions:
 
         with pytest.raises(TypeError):
             converter.structure(None, Decimal128)
-    
+
     def test_frozenset(self):
         f = frozenset({1, 2, 3, 4, 5})
         lst = [1, 2, 3, 4, 5]
@@ -101,7 +104,7 @@ class TestConversions:
 
         with pytest.raises(TypeError):
             converter.structure(None, re.Pattern)
-    
+
     def test_regex(self):
         p = re.compile(".*")
         reg = Regex.from_native(p)
@@ -110,7 +113,7 @@ class TestConversions:
 
         with pytest.raises(TypeError):
             converter.structure(None, Regex)
-    
+
     def test_set(self):
         s = set({1, 2, 3, 4, 5})
         lst = [1, 2, 3, 4, 5]

@@ -56,8 +56,8 @@ def _process_class(cls, db, collection_name):
     collection = db[collection_name]
     id_field = None
     db_field_overrides = {}
-    auto_now_fields = None
-    auto_now_add_fields = None
+    auto_now_fields = []
+    auto_now_add_fields = []
 
     for field in fields(cls):
         # check for id field.
