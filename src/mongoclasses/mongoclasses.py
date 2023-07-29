@@ -78,11 +78,11 @@ def _process_class(cls, db, collection_name):
         
         has_default = field.default is not MISSING or field.default_factory is not MISSING
         if has_default and (auto_now or auto_now_add):
-            raise ValueError("Cannot specify a default value and auto_now.")
+            raise ValueError("Cannot specify a default value with auto_now or auto_now_add.")
         
         if auto_now:
             auto_now_fields.append(field.name)
-        
+
         if auto_now_add:
             auto_now_add_fields.append(field.name)
 
@@ -102,6 +102,9 @@ def _process_class(cls, db, collection_name):
     setattr(cls, "__mongoclass_config__", config)
     return cls
 
+
+def _get_config(obj):
+    return getattr(obj, "__mongoclass_config__")
 
 def _get_collection(obj):
     return getattr(obj, "__mongoclass_config__").collection

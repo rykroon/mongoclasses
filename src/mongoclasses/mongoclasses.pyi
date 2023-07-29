@@ -37,3 +37,6 @@ def _get_collection(
     obj: MongoclassInstance | type[MongoclassInstance],
 ) -> Collection | AsyncIOMotorCollection:
     pass
+
+def _get_config(obj: MongoclassInstance | type[MongoclassInstance]) -> Config:
+    pass
