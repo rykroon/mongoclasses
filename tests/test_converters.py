@@ -7,23 +7,39 @@ from uuid import UUID, uuid4
 from bson import Binary, DatetimeMS, Decimal128, ObjectId, Regex, SON
 import pytest
 
-from mongoclasses import converter
-from mongoclasses.converters import register_db_name_overrides
+from mongoclasses import converter, mongoclass
 
 import logging
 
-def test_register_db_name_overrides():
-    @dataclass
-    class Foo:
-        name: str = field(metadata={"mongoclasses": {"db_name": "first_name"}})
-    
-    register_db_name_overrides(Foo)
-
-    f = Foo(name="Fred")
-    assert converter.unstructure(f) == {"first_name": "Fred"}
-
 
 class TestConversions:
+
+    def test_dataclass(self):
+        @dataclass
+        class MyClass:
+            init_field: str = ""
+            non_init_field: str = field(init=False, default="")
+            other_field: str = ""
+
+        data = converter.unstructure(MyClass())
+        del data["other_field"]
+        assert converter.structure(data, MyClass) == MyClass()
+
+    def test_mongoclass(self):
+        obj_id = ObjectId()
+
+        @mongoclass(db={"myclass": None})
+        class MyClass:
+            id: ObjectId = field(
+                default=obj_id, metadata={"mongoclasses": {"db_field": "_id"}}
+            )
+            non_init_field: str = field(init=False, default="")
+            other_field: str = ""
+        
+        data = converter.unstructure(MyClass())
+        del data["other_field"]
+        assert converter.structure(data, MyClass) == MyClass()
+
 
     def test_date(self):
         

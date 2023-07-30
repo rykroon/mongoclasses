@@ -27,7 +27,7 @@ class TestMongoclass:
         # should not raise a TypeError.
         @mongoclass(db=client["test"])
         class MyClass:
-            id: int = field(metadata={"mongoclasses": {"db_name": "_id"}})
+            id: int = field(metadata={"mongoclasses": {"db_field": "_id"}})
 
     def test_make_dataclass(self, client):
         @mongoclass(db=client["test"])

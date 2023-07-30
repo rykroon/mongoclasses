@@ -1,4 +1,4 @@
-from dataclasses import fields
+from dataclasses import fields, is_dataclass
 from datetime import datetime, date
 from decimal import Decimal
 from re import Pattern
@@ -6,32 +6,71 @@ from uuid import UUID
 
 from bson import Binary, DatetimeMS, Decimal128, ObjectId, Regex, SON
 import cattrs
-from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn, override
 
-import logging
+from .mongoclasses import is_mongoclass
 
 converter = cattrs.Converter()
 
 
-def register_db_name_overrides(cls):
-    """
-    Generates the appropriate struct/unstruct functions required to rename the
-    dataclass fields.
-    """
-    kwargs = {}
-    for field in fields(cls):
-        db_name = field.metadata.get("mongoclasses", {}).get("db_name", field.name)
-        if db_name != field.name:
-            kwargs[field.name] = override(rename=db_name)
+def structure_dataclass(data, dataclass):
+    init_fields = {}
+    non_init_fields = {}
+    for field in fields(dataclass):
+        if field.name not in data:
+            continue
 
-    if not kwargs:
-        return
+        value = converter.structure(data[field.name], field.type)
 
-    unstruct_func = make_dict_unstructure_fn(cls, converter, **kwargs)
-    struct_func = make_dict_structure_fn(cls, converter, **kwargs)
-    converter.register_unstructure_hook(cls, unstruct_func)
-    converter.register_structure_hook(cls, struct_func)
+        if field.init:
+            init_fields[field.name] = value
+        else:
+            non_init_fields[field.name] = value
+        
+    obj = dataclass(**init_fields)
+    for field, value in non_init_fields.items():
+        setattr(obj, field, value)
+    return obj
 
+
+def structure_mongoclass(data, mongoclass):
+    init_fields = {}
+    non_init_fields = {}
+    for field in fields(mongoclass):
+        db_field = field.metadata.get("mongoclasses", {}).get("db_field", field.name)
+        if db_field not in data:
+            continue
+
+        value = converter.structure(data[db_field], field.type)
+
+        if field.init:
+            init_fields[field.name] = value
+        else:
+            non_init_fields[field.name] = value
+        
+    obj = mongoclass(**init_fields)
+    for field, value in non_init_fields.items():
+        setattr(obj, field, value)
+    return obj
+
+
+def unstructure_mongoclass(obj):
+    result = {}
+    for field in fields(obj):
+        value = getattr(obj, field.name)
+        value = converter.unstructure(value)
+        db_field = field.metadata.get("mongoclasses", {}).get("db_field", field.name)
+        result[db_field] = value
+    return result
+
+
+converter.register_structure_hook_func(
+    lambda t: is_dataclass(t) and not is_mongoclass(t), structure_dataclass
+)
+
+converter.register_structure_hook_func(lambda t: is_mongoclass(t), structure_mongoclass)
+converter.register_unstructure_hook_func(
+    lambda t: is_mongoclass(t), unstructure_mongoclass
+)
 
 def register_hook(converter, hook):
     if hasattr(hook, "from_db"):
@@ -46,7 +85,6 @@ class DateHook:
 
     @staticmethod
     def from_db(value, type_):
-        logging.warning("DateHook.from_db()")
         return DatetimeHook.from_db(value, type_).date()
 
     @staticmethod
@@ -64,8 +102,6 @@ class DatetimeHook:
 
     @staticmethod
     def from_db(value, type_):
-        logging.warning("DatetimeHook.from_db()")
-
         if isinstance(value, datetime):
             return value
         if isinstance(value, (int, float)):

@@ -1,8 +1,6 @@
 from dataclasses import dataclass, is_dataclass, fields
 import inspect
 
-from .converters import register_db_name_overrides
-
 
 def mongoclass(db, collection_name=None):
     """
@@ -42,7 +40,7 @@ def _process_class(cls, db, collection_name):
 
     # find _id field
     for field in fields(cls):
-        field_name = field.metadata.get("mongoclasses", {}).get("db_name", field.name)
+        field_name = field.metadata.get("mongoclasses", {}).get("db_field", field.name)
         if field_name == "_id":
             setattr(cls, "__mongoclass_id_field__", field)
             break
@@ -50,7 +48,6 @@ def _process_class(cls, db, collection_name):
     else:
         raise TypeError("Must define an '_id' field.")
 
-    register_db_name_overrides(cls)
     return cls
 
 
