@@ -35,9 +35,10 @@ class TestConversions:
             )
             non_init_field: str = field(init=False, default="")
             other_field: str = ""
-        
+
         data = converter.unstructure(MyClass())
         del data["other_field"]
+        assert "_id" in data
         assert converter.structure(data, MyClass) == MyClass()
 
 
