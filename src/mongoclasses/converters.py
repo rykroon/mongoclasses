@@ -11,6 +11,29 @@ from .mongoclasses import is_mongoclass
 
 converter = cattrs.Converter()
 
+"""
+    I am now having doubts about using cattrs...
+    
+    It recently came to my attention that cattrs.structure() is not smart enough to
+    handle non-init fields of dataclasses.
+
+    I was able to find a work around but I feel like there are going to be various edge
+    cases in the future that pop up that are going to be annoying.
+    
+    Additionally the entire library is starting to get too big with all of the
+    structuring and unstructuring logic.
+
+    In the beginning I was convinced that this was NOT going to be a data validation
+    library and the the developer could use their own validation library of choice.
+
+    I can't even recall why I went down the rabbit hole of using cattrs...
+
+    I think it was the from_dict logic that was originally a pain in the ass, and that
+    is what lead me to use cattrs, but then I got carried away with the
+    structuring and unstructing logic in cattrs and I slowly added validation.
+
+"""
+
 
 def structure_dataclass(data, dataclass):
     init_fields = {}
