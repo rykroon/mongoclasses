@@ -1,11 +1,9 @@
-from dataclasses import dataclass, is_dataclass, fields, Field, MISSING
+from dataclasses import dataclass, is_dataclass, fields, Field
+from functools import lru_cache
 import inspect
 
 from pymongo.collection import Collection
 from motor.motor_asyncio import AsyncIOMotorCollection
-
-from cattrs.gen import override
-from .converters import register_db_field_overrides
 
 
 @dataclass(frozen=True)
@@ -53,69 +51,30 @@ def _process_class(cls, db, collection_name):
     if collection_name is None:
         collection_name = cls.__name__.lower()
 
-    collection = db[collection_name]
-    id_field = None
-    db_field_overrides = {}
-    auto_now_fields = []
-    auto_now_add_fields = []
-
-    for field in fields(cls):
-        # check for id field.
-        db_field = field.metadata.get("mongoclasses", {}).get("db_field", field.name)
-        if db_field == "_id":
-            id_field = field
-
-        # add db_field override.
-        if db_field != field.name:
-            db_field_overrides[field.name] = override(rename=db_field)
-
-        # check for auto now fields.
-        auto_now = field.metadata.get("mongoclasses", {}).get("auto_now", False)
-        auto_now_add = field.metadata.get("mongoclasses", {}).get("auto_now_add", False)
-
-        if auto_now and auto_now_add:
-            raise ValueError("auto_now and auto_now_add are mutually exclusive.")
-        
-        has_default = field.default is not MISSING or field.default_factory is not MISSING
-        if has_default and (auto_now or auto_now_add):
-            raise ValueError("Cannot specify a default value with auto_now or auto_now_add.")
-        
-        if auto_now:
-            auto_now_fields.append(field.name)
-
-        if auto_now_add:
-            auto_now_add_fields.append(field.name)
-
-    if id_field is None:
-        raise TypeError("Must specify an _id field.")
-
-    # register db field overrides.
-    register_db_field_overrides(cls, db_field_overrides)
-
-    config = Config(
-        collection=collection,
-        id_field=id_field,
-        auto_now_fields=auto_now_fields,
-        auto_now_add_fields=auto_now_add_fields,
-    )
-
-    setattr(cls, "__mongoclass_config__", config)
+    setattr(cls, "__mongoclass_collection__", db[collection_name])
+    _get_id_field(cls) # will raise a TypeError if _id field is not found.
     return cls
 
 
-def _get_config(obj):
-    return getattr(obj, "__mongoclass_config__")
-
 def _get_collection(obj):
-    return getattr(obj, "__mongoclass_config__").collection
+    return getattr(obj, "__mongoclass_collection__")
 
 
+def _get_db_field_name(field):
+    return field.metadata.get("mongoclasses", {}).get("db_field", field.name)
+
+
+@lru_cache
 def _get_id_field(obj):
-    return getattr(obj, "__mongoclass_config__").id_field
+    for field in fields(obj):
+        db_field = _get_db_field_name(field)
+        if db_field == "_id":
+            return field
+    raise TypeError("Missing _id field.")
 
 
 def _is_mongoclass_instance(obj, /):
-    return hasattr(type(obj), "__mongoclass_config__")
+    return hasattr(type(obj), "__mongoclass_collection__")
 
 
 def is_mongoclass(obj, /):
@@ -129,5 +88,4 @@ def is_mongoclass(obj, /):
         True if the object is a mongoclass type or instance.
     """
     cls = obj if isinstance(obj, type) else type(obj)
-    return hasattr(cls, "__mongoclass_config__")
-        
+    return hasattr(cls, "__mongoclass_collection__")

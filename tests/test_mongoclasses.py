@@ -42,14 +42,14 @@ class TestMongoclass:
         class MyClass:
             _id: int
 
-        assert MyClass.__mongoclass_config__.collection.name == "myclass"
+        assert MyClass.__mongoclass_collection__.name == "myclass"
 
     def test_custom_collection_name(self, client):
         @mongoclass(db=client["test"], collection_name="my_class")
         class MyClass:
             _id: int
 
-        assert MyClass.__mongoclass_config__.collection.name == "my_class"
+        assert MyClass.__mongoclass_collection__.name == "my_class"
 
     def test_auto_now_and_auto_now_add(self, client):
         with pytest.raises(ValueError):

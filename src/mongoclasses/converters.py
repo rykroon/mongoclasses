@@ -1,4 +1,4 @@
-from dataclasses import fields
+from dataclasses import fields, is_dataclass
 from datetime import datetime, date
 from decimal import Decimal
 from re import Pattern
@@ -6,8 +6,9 @@ from uuid import UUID
 
 from bson import Binary, DatetimeMS, Decimal128, ObjectId, Regex, SON
 import cattrs
-from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn, override
+from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
 
+from .mongoclasses import is_mongoclass, _get_db_field_name
 import logging
 
 converter = cattrs.Converter()
@@ -32,12 +33,70 @@ def register_hook(converter, hook):
         converter.register_unstructure_hook(hook.type_, hook.to_db)
 
 
+def structure_dataclass(data, dataclass):
+    init_fields = {}
+    non_init_fields = {}
+    for f in fields(dataclass):
+        if f.name not in data:
+            continue
+
+        value = converter.structure(data[f.name], f.type)
+        if f.init:
+            init_fields[f.name] = value
+        else:
+            non_init_fields[f.name] = value
+
+    obj = dataclass(**init_fields)
+    for f, v in non_init_fields.items():
+        setattr(obj, f, v)
+    return obj
+
+
+def structure_mongoclass(data, mongoclass):
+    init_fields = {}
+    non_init_fields = {}
+    for field in fields(mongoclass):
+        db_field = _get_db_field_name(field)
+        if db_field not in data:
+            continue
+
+        value = converter.structure(data[db_field], field.type)
+        if field.init:
+            init_fields[field.name] = value
+        else:
+            non_init_fields[field.name] = value
+
+    obj = mongoclass(**init_fields)
+    for f, v in non_init_fields.items():
+        setattr(obj, f, v)
+    return obj
+
+
+def unstructure_mongoclass(obj):
+    result = {}
+    for field in fields(obj):
+        value = converter.unstructure(getattr(obj, field.name))
+        db_field = _get_db_field_name(field)
+        result[db_field] = value
+    return result
+
+
+converter.register_structure_hook_func(
+    lambda t: is_dataclass(t) and not is_mongoclass(t), structure_dataclass
+)
+
+converter.register_structure_hook_func(lambda t: is_mongoclass(t), structure_mongoclass)
+
+converter.register_unstructure_hook_func(
+    lambda t: is_mongoclass(t), unstructure_mongoclass
+)
+
+
 class DateHook:
     type_ = date
 
     @staticmethod
     def from_db(value, type_):
-        logging.warning("DateHook.from_db()")
         return DatetimeHook.from_db(value, type_).date()
 
     @staticmethod

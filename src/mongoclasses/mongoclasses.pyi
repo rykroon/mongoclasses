@@ -10,15 +10,10 @@ if TYPE_CHECKING:
     from _typeshed import DataclassInstance
 
 
-class Config(DataclassInstance):
-    collection: Collection | AsyncIOMotorCollection
-    id_field: Field
-    auto_now_fields: list[str]
-    auto_now_add_fields: list[str]
-
-
 class MongoclassInstance(DataclassInstance, metaclass=ABCMeta):
-    __mongoclass_config__: Config
+    __mongoclass_collection__: Collection | AsyncIOMotorCollection
+    __mongoclass_fields__: dict[str, Field]
+
 
 def mongoclass(
     db: Database | AsyncIOMotorDatabase, collection_name: str | None, **kwargs: Any
@@ -38,5 +33,4 @@ def _get_collection(
 ) -> Collection | AsyncIOMotorCollection:
     pass
 
-def _get_config(obj: MongoclassInstance | type[MongoclassInstance]) -> Config:
-    pass
+def _get_id_field(cls: type[MongoclassInstance]) -> Field: pass
