@@ -1,9 +1,24 @@
-
-from dataclasses import is_dataclass, _FIELD_CLASSVAR, _FIELD
+from dataclasses import is_dataclass, fields, _FIELD_CLASSVAR, _FIELD
+from functools import lru_cache
 import inspect
 
 
-def fromdict(cls, /, data):
+def to_document(obj, /, include=None):
+    result = {}
+    for field in fields(obj):
+        if include is not None and field.name not in include:
+            continue
+
+        value = getattr(obj, field.name)
+        if is_dataclass(value):
+            value = to_document(value)
+
+        db_field = field.metadata.get("mongoclasses", {}).get("db_field", field.name)
+        result[db_field] = value
+    return result
+
+
+def from_document(cls, /, data):
     """
     Attempts to create a dataclass instance from a dictionary.
     """
@@ -14,21 +29,24 @@ def fromdict(cls, /, data):
         raise TypeError("Object must be a dataclass type.")
 
     init_values = {}
-    non_init_values = []
-    for field in cls.__dataclass_fields__.values():
-        if field._field_type is _FIELD_CLASSVAR:
+    non_init_values = {}
+    for field in fields(cls):
+        db_field = field.metadata.get("mongoclasses", {}).get("db_field", field.name)
+        if db_field not in data:
             continue
 
-        if field.name not in data:
-            continue
+        value = data[db_field]
+
+        if isinstance(value, dict) and is_dataclass(field.type):
+            value = from_document(field.type, value)
 
         if field.init:
-            init_values[field.name] = data[field.name]
+            init_values[field.name] = value
         else:
-            non_init_values.append(((field.name, data[field.name])))
+            non_init_values[field.name] = value
 
     obj = cls(**init_values)
-    for field, value in non_init_values:
+    for field, value in non_init_values.items():
         setattr(obj, field, value)
 
     return obj
@@ -39,10 +57,24 @@ def is_mongoclass(obj, /):
     Returns True if the obj is a mongoclass or an instance of
     a mongoclass.
     """
-    if not is_dataclass(obj):
+    if not inspect.isclass(obj):
+        obj = type(obj)
+    return _is_mongoclass_type(obj)
+
+
+def _is_mongoclass_instance(obj, /):
+    """
+    Returns True if the obj is an instance of a mongoclass.
+    """
+    return _is_mongoclass_type(type(obj))
+
+
+@lru_cache
+def _is_mongoclass_type(t, /):
+    if not is_dataclass(t):
         return False
 
-    dataclass_fields = getattr(obj, "__dataclass_fields__")
+    dataclass_fields = getattr(t, "__dataclass_fields__")
     if "_id" not in dataclass_fields:
         return False
 
@@ -56,16 +88,3 @@ def is_mongoclass(obj, /):
         return False
 
     return True
-
-
-def _is_mongoclass_type(obj, /):
-    if not inspect.isclass(obj):
-        return False
-    return is_mongoclass(obj)
-
-
-def _is_mongoclass_instance(obj, /):
-    """
-    Returns True if the obj is an instance of a mongoclass.
-    """
-    return is_mongoclass(type(obj))

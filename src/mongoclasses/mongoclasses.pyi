@@ -1,10 +1,8 @@
 from abc import ABCMeta
-from dataclasses import Field
-from typing import Any, Callable, ClassVar, TypeGuard, TYPE_CHECKING
+from typing import Any, ClassVar, TypeGuard, TYPE_CHECKING
 
 from pymongo.collection import Collection
-from pymongo.database import Database
-from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorDatabase
+from motor.motor_asyncio import AsyncIOMotorCollection
 
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
@@ -20,4 +18,10 @@ def is_mongoclass(
 
 def _is_mongoclass_instance(obj: Any) -> TypeGuard[MongoclassInstance]:
     pass
+
+
+def to_document(obj: DataclassInstance) -> dict[str, Any]: pass
+def from_document(
+    cls: type[DataclassInstance], data:dict[str, Any]
+) -> DataclassInstance: pass
 
