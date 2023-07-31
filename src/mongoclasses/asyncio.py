@@ -30,7 +30,7 @@ async def delete_one(obj, /):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
-    return await type(obj).collection.delete_one(obj._id)
+    return await type(obj).collection.delete_one({"_id": obj._id})
 
 
 async def find_one(cls, /, filter=None):

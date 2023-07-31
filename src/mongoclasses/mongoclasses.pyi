@@ -10,13 +10,8 @@ if TYPE_CHECKING:
     from _typeshed import DataclassInstance
 
 class MongoclassInstance(DataclassInstance, metaclass=ABCMeta):
-    __mongoclass_collection__: ClassVar[Collection | AsyncIOMotorCollection]
-    __mongoclass_id_field__: Field
-
-def mongoclass(
-    db: Database | AsyncIOMotorDatabase, collection_name: str | None, **kwargs: Any
-) -> Callable[[type], MongoclassInstance]:
-    pass
+    collection: ClassVar[Collection | AsyncIOMotorCollection]
+    _id: Any
 
 def is_mongoclass(
     obj: Any, /
@@ -26,7 +21,3 @@ def is_mongoclass(
 def _is_mongoclass_instance(obj: Any) -> TypeGuard[MongoclassInstance]:
     pass
 
-def _get_collection(
-    obj: MongoclassInstance | type[MongoclassInstance],
-) -> Collection | AsyncIOMotorCollection:
-    pass

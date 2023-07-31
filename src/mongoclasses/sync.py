@@ -70,7 +70,7 @@ def delete_one(obj, /):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
-    return type(obj).collection.delete_one(obj._id)
+    return type(obj).collection.delete_one({"_id": obj._id})
 
 
 def find_one(cls, /, filter=None):

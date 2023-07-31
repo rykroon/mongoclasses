@@ -1,11 +1,12 @@
 from dataclasses import dataclass, field
+from typing import ClassVar
 
 from bson import ObjectId
 import pytest
 import pytest_asyncio
-from motor.motor_asyncio import AsyncIOMotorClient
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
-from mongoclasses import mongoclass, _get_collection, find
+from mongoclasses import find
 from mongoclasses.asyncio import delete_one, find_one, insert_one, update_one
 
 
@@ -21,8 +22,9 @@ async def drop_database(client):
 
 @pytest.fixture
 def Foo(client):
-    @mongoclass(client["test"])
+    @dataclass
     class Foo:
+        collection: ClassVar[AsyncIOMotorCollection] = client["test"]["foo"]
         _id: ObjectId = field(default_factory=ObjectId)
         name: str = ""
         description: str = ""
@@ -36,7 +38,7 @@ async def test_insert_one_without_id(Foo):
     await insert_one(f)
 
     assert f._id is not None
-    assert await _get_collection(Foo).find_one(f._id) is not None
+    assert await Foo.collection.find_one(f._id) is not None
 
 
 @pytest.mark.asyncio
@@ -47,7 +49,7 @@ async def test_insert_one_with_id(Foo):
     await insert_one(f)
 
     assert f._id == object_id
-    assert await _get_collection(Foo).find_one(f._id) is not None
+    assert await Foo.collection.find_one(f._id) is not None
 
 
 @pytest.mark.asyncio
@@ -58,7 +60,7 @@ async def test_update_one(Foo):
     f.name = "Fred"
     await update_one(f)
 
-    doc = await _get_collection(Foo).find_one(f._id)
+    doc = await Foo.collection.find_one(f._id)
     assert doc["name"] == "Fred"
 
 
@@ -71,7 +73,7 @@ async def test_update_one_with_fields(Foo):
     f.description = "Hello World"
     await update_one(f, fields=["name"])
 
-    doc = await _get_collection(Foo).find_one(f._id)
+    doc = await Foo.collection.find_one(f._id)
     assert doc["name"] == "Fred"
     assert doc["description"] == ""
 
@@ -82,7 +84,7 @@ async def test_delete_one(Foo):
     await insert_one(f)
     await delete_one(f)
 
-    assert await _get_collection(Foo).find_one(f._id) is None
+    assert await Foo.collection.find_one(f._id) is None
 
 
 @pytest.mark.asyncio
