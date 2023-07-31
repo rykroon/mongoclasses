@@ -1,6 +1,6 @@
+from dataclasses import asdict
 from motor.motor_asyncio import AsyncIOMotorCursor
 
-from .converters import converter
 from .cursors import AsyncCursor, Cursor
 from .mongoclasses import (
     is_mongoclass,
@@ -26,7 +26,7 @@ def insert_one(obj, /):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
-    document = converter.unstructure(obj)
+    document = asdict(obj)
     collection = _get_collection(obj)
     result = collection.insert_one(document)
     id_field = _get_id_field(obj)
@@ -52,7 +52,7 @@ def update_one(obj, /, fields=None):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
-    document = converter.unstructure(obj)
+    document = asdict(obj)
     if fields is not None:
         document = {k: v for k, v in document.items() if k in fields}
 

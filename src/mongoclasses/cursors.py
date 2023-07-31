@@ -3,8 +3,6 @@ from dataclasses import dataclass
 from pymongo.cursor import Cursor as PymongoCursor
 from motor.motor_asyncio import AsyncIOMotorCursor
 
-from .converters import converter
-
 
 @dataclass(frozen=True)
 class Cursor:
