@@ -1,15 +1,10 @@
-from dataclasses import dataclass, is_dataclass, field
+from dataclasses import dataclass, field, MISSING
 from typing import ClassVar
 
-from pymongo import MongoClient
+from pymongo.collection import Collection
 import pytest
 
 from mongoclasses import is_mongoclass, from_document, to_document
-
-
-@pytest.fixture
-def client():
-    return MongoClient()
 
 
 class TestIsMongoclass:
@@ -18,24 +13,51 @@ class TestIsMongoclass:
     Tests for the is_mongoclass()
     """
 
-    def test_just_a_class(self):
-        class MyClass:
-            ...
-
-        assert is_mongoclass(MyClass) is False
-    
-    def test_just_a_dataclass(self):
-        @dataclass
-        class MyClass:
+    def test_not_a_dataclass(self):
+        class Foo:
             ...
         
-        assert is_mongoclass(MyClass) is False
+        assert is_mongoclass(Foo) is False
+        assert is_mongoclass(Foo()) is False
+
+    def test_missing_collection(self):
+        @dataclass
+        class Foo:
+            ...
+
+        assert is_mongoclass(Foo) is False
+        assert is_mongoclass(Foo()) is False
     
-    def test_is_a_mongoclass(self, client):
+    def test_collection_not_classvar(self):
+        @dataclass
+        class Foo:
+            collection: str = ""
+
+        assert is_mongoclass(Foo) is False
+        assert is_mongoclass(Foo()) is False
+
+    def test_missing_id(self):
+        @dataclass
+        class Foo:
+            collection: ClassVar[Collection]
+        
+        assert is_mongoclass(Foo) is False
+        assert is_mongoclass(Foo()) is False
+
+    def test_explicit_id_field(self):
         @dataclass
         class MyClass:
-            collection: ClassVar[...] = client["test"]["myclass"]
+            collection: ClassVar[Collection]
             _id: int = 0
+
+        assert is_mongoclass(MyClass) is True
+        assert is_mongoclass(MyClass()) is True
+    
+    def test_id_field_override(self):
+        @dataclass
+        class MyClass:
+            collection: ClassVar[Collection]
+            id: int = field(default=0, metadata={"mongoclasses": {"db_field": "_id"}})
 
         assert is_mongoclass(MyClass) is True
         assert is_mongoclass(MyClass()) is True
@@ -76,6 +98,18 @@ class TestFromDocument:
             a: int
         
         assert from_document(MyClass, {"a": 1, "b": 2}) == MyClass(a=1)
+
+    def test_defaults(self):
+        @dataclass
+        class MyClass:
+            a: int
+            b: int = 2
+            c: int = field(default_factory=lambda: 3)
+
+        obj = from_document(MyClass, {})
+        assert obj.a == MISSING
+        assert obj.b == 2
+        assert obj.c == 3
     
     def test_non_init_fields(self):
         @dataclass

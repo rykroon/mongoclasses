@@ -1,4 +1,4 @@
-from dataclasses import is_dataclass, fields, _FIELD_CLASSVAR, _FIELD
+from dataclasses import is_dataclass, fields, MISSING, _FIELD_CLASSVAR, _FIELD
 from functools import lru_cache
 import inspect
 
@@ -32,10 +32,15 @@ def from_document(cls, /, data):
     non_init_values = {}
     for field in fields(cls):
         db_field = field.metadata.get("mongoclasses", {}).get("db_field", field.name)
-        if db_field not in data:
-            continue
-
-        value = data[db_field]
+        if db_field in data:
+            value = data[db_field]
+        else:
+            if field.default is not MISSING:
+                value = field.default
+            elif field.default_factory is not MISSING:
+                value = field.default_factory()
+            else:
+                value = MISSING   
 
         if isinstance(value, dict) and is_dataclass(field.type):
             value = from_document(field.type, value)
@@ -75,16 +80,15 @@ def _is_mongoclass_type(t, /):
         return False
 
     dataclass_fields = getattr(t, "__dataclass_fields__")
-    if "_id" not in dataclass_fields:
-        return False
-
-    if dataclass_fields["_id"]._field_type is not _FIELD:
-        return False
-
     if "collection" not in dataclass_fields:
         return False
 
     if dataclass_fields["collection"]._field_type is not _FIELD_CLASSVAR:
         return False
 
-    return True
+    for field in fields(t):
+        db_field = field.metadata.get("mongoclasses", {}).get("db_field", field.name)
+        if db_field == "_id":
+            return True
+
+    return False
