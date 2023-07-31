@@ -22,10 +22,10 @@ def from_document(cls, /, data):
     """
     Attempts to create a dataclass instance from a dictionary.
     """
-    if not is_dataclass(cls):
+    if not inspect.isclass(cls):
         raise TypeError("Object must be a dataclass type.")
 
-    if not inspect.isclass(cls):
+    if not is_dataclass(cls):
         raise TypeError("Object must be a dataclass type.")
 
     init_values = {}

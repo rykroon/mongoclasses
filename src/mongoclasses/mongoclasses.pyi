@@ -24,4 +24,3 @@ def to_document(obj: DataclassInstance) -> dict[str, Any]: pass
 def from_document(
     cls: type[DataclassInstance], data:dict[str, Any]
 ) -> DataclassInstance: pass
-
