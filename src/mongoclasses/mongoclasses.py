@@ -1,77 +1,71 @@
-from dataclasses import dataclass, is_dataclass, fields
+
+from dataclasses import is_dataclass, _FIELD_CLASSVAR, _FIELD
 import inspect
 
 
-def mongoclass(db, collection_name=None):
+def fromdict(cls, /, data):
     """
-    Transforms a class into a Mongoclass. If the class isn't already a dataclass then \
-    it will transform the class into a dataclass as well.
-
-    Parameters:
-        db: A pymongo Database or motor AsyncioMotorDatabase object.
-        collection_name: The name of the collection. Defaults to the class name in all \
-        lowercase.
-
-    Raises:
-        TypeError if object is not a class, or does not have an _id field.
-
-    Returns:
-        A class decorator that transforms the class into a mongoclass.
+    Attempts to create a dataclass instance from a dictionary.
     """
-
-    def wrapper(cls):
-        return _process_class(cls, db, collection_name)
-
-    return wrapper
-
-
-def _process_class(cls, db, collection_name):
-    if not inspect.isclass(cls):
-        raise TypeError("object is not a class.")
-
     if not is_dataclass(cls):
-        # if not a dataclass then make it one!
-        cls = dataclass(cls)
+        raise TypeError("Object must be a dataclass type.")
 
-    if collection_name is None:
-        collection_name = cls.__name__.lower()
+    if not inspect.isclass(cls):
+        raise TypeError("Object must be a dataclass type.")
 
-    setattr(cls, "__mongoclass_collection__", db[collection_name])
+    init_values = {}
+    non_init_values = []
+    for field in cls.__dataclass_fields__.values():
+        if field._field_type is _FIELD_CLASSVAR:
+            continue
 
-    # find _id field
-    for field in fields(cls):
-        field_name = field.metadata.get("mongoclasses", {}).get("db_field", field.name)
-        if field_name == "_id":
-            setattr(cls, "__mongoclass_id_field__", field)
-            break
+        if field.name not in data:
+            continue
 
-    else:
-        raise TypeError("Must define an '_id' field.")
+        if field.init:
+            init_values[field.name] = data[field.name]
+        else:
+            non_init_values.append(((field.name, data[field.name])))
 
-    return cls
+    obj = cls(**init_values)
+    for field, value in non_init_values:
+        setattr(obj, field, value)
 
-
-def _get_collection(obj):
-    return getattr(obj, "__mongoclass_collection__")
-
-
-def _get_id_field(obj):
-    return getattr(obj, "__mongoclass_id_field__")
-
-
-def _is_mongoclass_instance(obj, /):
-    return hasattr(type(obj), "__mongoclass_collection__")
+    return obj
 
 
 def is_mongoclass(obj, /):
     """
-    Returns True if the object is a mongoclass type or instance else False.
-
-    Parameters:
-        obj: Any object.
-
-    Returns:
-        True if the object is a mongoclass type or instance.
+    Returns True if the obj is a mongoclass or an instance of
+    a mongoclass.
     """
-    cls = obj if isinstance(obj, type) else type(obj)
-    return hasattr(cls, "__mongoclass_collection__")
+    if not is_dataclass(obj):
+        return False
+
+    dataclass_fields = getattr(obj, "__dataclass_fields__")
+    if "_id" not in dataclass_fields:
+        return False
+
+    if dataclass_fields["_id"]._field_type is not _FIELD:
+        return False
+
+    if "collection" not in dataclass_fields:
+        return False
+
+    if dataclass_fields["collection"]._field_type is not _FIELD_CLASSVAR:
+        return False
+
+    return True
+
+
+def is_mongoclass_type(obj, /):
+    if not inspect.isclass(obj):
+        return False
+    return is_mongoclass(obj)
+
+
+def is_mongoclass_instance(obj, /):
+    """
+    Returns True if the obj is an instance of a mongoclass.
+    """
+    return is_mongoclass(type(obj))

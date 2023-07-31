@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from pymongo.cursor import Cursor as PymongoCursor
 from motor.motor_asyncio import AsyncIOMotorCursor
 
+from .mongoclasses import fromdict
+
 
 @dataclass(frozen=True)
 class Cursor:
@@ -14,7 +16,7 @@ class Cursor:
 
     def __next__(self):
         document = self.cursor.next()
-        return converter.structure(document, self.dataclass)
+        return fromdict(self.dataclass, document)
 
 
 @dataclass(frozen=True)
@@ -27,4 +29,4 @@ class AsyncCursor:
 
     async def __anext__(self):
         document = await self.cursor.next()
-        return converter.structure(document, self.dataclass)
+        return fromdict(self.dataclass, document)

@@ -2,12 +2,7 @@ from dataclasses import asdict
 from motor.motor_asyncio import AsyncIOMotorCursor
 
 from .cursors import AsyncCursor, Cursor
-from .mongoclasses import (
-    is_mongoclass,
-    _is_mongoclass_instance,
-    _get_id_field,
-    _get_collection,
-)
+from .mongoclasses import is_mongoclass, _is_mongoclass_instance, fromdict
 
 
 def insert_one(obj, /):
@@ -27,10 +22,8 @@ def insert_one(obj, /):
         raise TypeError("Not a mongoclass instance.")
 
     document = asdict(obj)
-    collection = _get_collection(obj)
-    result = collection.insert_one(document)
-    id_field = _get_id_field(obj)
-    setattr(obj, id_field.name, result.inserted_id)
+    result = type(obj).collection.insert_one(document)
+    obj._id = result.inserted_id
     return result
 
 
@@ -56,10 +49,9 @@ def update_one(obj, /, fields=None):
     if fields is not None:
         document = {k: v for k, v in document.items() if k in fields}
 
-    id_field = _get_id_field(obj)
-    id_value = getattr(obj, id_field.name)
-    collection = _get_collection(obj)
-    return collection.update_one(filter={"_id": id_value}, update={"$set": document})
+    return type(obj).collection.update_one(
+        filter={"_id": obj._id}, update={"$set": document}
+    )
 
 
 def delete_one(obj, /):
@@ -78,10 +70,7 @@ def delete_one(obj, /):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
-    id_field = _get_id_field(obj)
-    id_value = getattr(obj, id_field.name)
-    collection = _get_collection(obj)
-    return collection.delete_one({"_id": id_value})
+    return type(obj).collection.delete_one(obj._id)
 
 
 def find_one(cls, /, filter=None):
@@ -101,11 +90,10 @@ def find_one(cls, /, filter=None):
     if not is_mongoclass(cls):
         raise TypeError("Not a mongoclass.")
 
-    collection = _get_collection(cls)
-    document = collection.find_one(filter=filter)
+    document = cls.collection.find_one(filter=filter)
     if document is None:
         return None
-    return converter.structure(document, cls)
+    return fromdict(cls, document)
 
 
 def find(cls, /, filter=None, skip=0, limit=0, sort=None):
@@ -133,8 +121,7 @@ def find(cls, /, filter=None, skip=0, limit=0, sort=None):
     if sort is not None:
         sort = [(f[1:], -1) if f.startswith("-") else (f, 1) for f in sort]
 
-    collection = _get_collection(cls)
-    cursor = collection.find(filter=filter, skip=skip, limit=limit, sort=sort)
+    cursor = cls.collection.find(filter=filter, skip=skip, limit=limit, sort=sort)
     if isinstance(cursor, AsyncIOMotorCursor):
         return AsyncCursor(cursor=cursor, dataclass=cls)
     return Cursor(cursor=cursor, dataclass=cls)
