@@ -1,4 +1,4 @@
-from dataclasses import is_dataclass, fields, MISSING, _FIELD_CLASSVAR, _FIELD
+from dataclasses import is_dataclass, fields, MISSING, _FIELD_CLASSVAR
 from functools import lru_cache
 import inspect
 
