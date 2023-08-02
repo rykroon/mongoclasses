@@ -1,6 +1,6 @@
 # Mongoclasses
 
-A simple and light tool for storing and retrieving python dataclasses with MongoDB.
+A simple and lightweight library for storing and retrieving python dataclasses with MongoDB.
 
 
 ### Installation
@@ -10,24 +10,33 @@ pip install mongoclasses
 
 
 ### What is a Mongoclass?
-A Mongoclass is simply a dataclass. Use the `mongoclass` decorator to create a mongoclass.
+A Mongoclass is simply a dataclass. There are no base classes nor any extra class decorators besides
+the built-in dataclass decorator.
+
+In order for a dataclass to be considered a mongoclass it must have the following two fields:
+- A ClassVar field named 'collection'.
+- A field named '_id' OR a field whose metadata has "db_field" set to "_id".
 
 
 ### Quick Example
 ```
-from mongoclasses import mongoclass, is_mongoclass, insert_one
+from dataclasses import dataclass
+from typing import ClassVar
+import mongoclasses
 from pymongo import MongoClient
+from pymongo.collection import Collection
 
 client = MongoClient()
-database = client["db"]
+db = client["db"]
 
-@mongoclass(database)
+@dataclass
 class MyMongoclass:
+    collection: ClassVar[Collection] = db["collection"]
     _id: int = None
 
-assert is_mongoclass(MyMongoclass) is True
+assert mongoclasses.is_mongoclass(MyMongoclass) is True
 obj = MyMongoclass()
-insert_one(obj)
+mongoclasses.insert_one(obj)
 ```
 
 ### Features
