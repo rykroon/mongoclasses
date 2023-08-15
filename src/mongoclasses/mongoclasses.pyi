@@ -21,7 +21,4 @@ def _is_mongoclass_instance(obj: Any) -> TypeGuard[MongoclassInstance]:
 
 def _is_mongoclass_type(t: type, /): pass
 
-def to_document(obj: DataclassInstance) -> dict[str, Any]: pass
-def from_document(
-    cls: type[DataclassInstance], data:dict[str, Any]
-) -> DataclassInstance: pass
+

@@ -2,8 +2,10 @@ from motor.motor_asyncio import AsyncIOMotorCursor
 
 from .cursors import AsyncCursor, Cursor
 from .mongoclasses import (
-    is_mongoclass, _is_mongoclass_instance, to_document, from_document
+    is_mongoclass, _is_mongoclass_instance
 )
+from .serialization import to_document, from_document
+from .update import to_update_expr
 
 
 def insert_one(obj, /):
@@ -46,9 +48,31 @@ def update_one(obj, /, fields=None):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
-    document = to_document(obj, include=fields)
+    update_document = to_update_expr(obj)
     return type(obj).collection.update_one(
-        filter={"_id": obj._id}, update={"$set": document}
+        filter={"_id": obj._id}, update=update_document
+    )
+
+
+def replace_one(obj, /):
+    """
+    Replaces the object in the database.
+
+    Parameters:
+        obj: A mongoclass instance.
+    
+    Raises:
+        TypeError: If the object is not a mongoclass instance.
+
+    Returns:
+        A pymongo `UpdateResult` object.
+    """
+    if not _is_mongoclass_instance(obj):
+        raise TypeError("Not a mongoclass instance.")
+    
+    document = to_document(obj)
+    return type(obj).collection.replace_one(
+        filter={"_id": obj._id}, replacement=document
     )
 
 

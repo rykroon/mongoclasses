@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pymongo.cursor import Cursor as PymongoCursor
 from motor.motor_asyncio import AsyncIOMotorCursor
 
-from .mongoclasses import from_document
+from .serialization import from_document
 
 
 @dataclass(frozen=True)

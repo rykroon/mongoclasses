@@ -1,6 +1,8 @@
 from .mongoclasses import (
-    is_mongoclass, _is_mongoclass_instance, to_document, from_document
+    is_mongoclass, _is_mongoclass_instance
 )
+from .serialization import to_document, from_document
+from .update import to_update_expr
 
 
 async def insert_one(obj, /):
@@ -17,9 +19,19 @@ async def update_one(obj, /, fields=None):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
-    document = to_document(obj, include=fields)
+    update_document = to_update_expr(obj)
     return await type(obj).collection.update_one(
-        filter={"_id": obj._id}, update={"$set": document}
+        filter={"_id": obj._id}, update=update_document
+    )
+
+
+async def replace_one(obj, /):
+    if not _is_mongoclass_instance(obj):
+        raise TypeError("Not a mongoclass instance.")
+    
+    document = to_document(obj)
+    return await type(obj).collection.replace_one(
+        filter={"_id": obj._id}, replacement=document
     )
 
 
