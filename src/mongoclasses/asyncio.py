@@ -19,7 +19,7 @@ async def update_one(obj, /, fields=None):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
-    update_document = to_update_expr(obj)
+    update_document = to_update_expr(obj, include=fields)
     return await type(obj).collection.update_one(
         filter={"_id": obj._id}, update=update_document
     )

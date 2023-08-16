@@ -82,12 +82,20 @@ class PullAll(UpdateOperator):
     value: List[Any]
 
 
-def to_update_expr(obj, /, update_fields=None):
-    result = {}
-    return any_to_update_expr(result, None, obj)
+def to_update_expr(obj, /, include=None):
+    return any_to_update_expr({}, None, obj, include)
 
 
-def any_to_update_expr(result, path, obj, update_fields=None):
+def any_to_update_expr(result, path, obj, include=None):
+    if path is not None and include is not None:
+        parts = path.split(".")
+        for i in range(len(parts)):
+            p = ".".join(parts[:i+1])
+            if p in include:
+                break
+        else:
+            return result
+
     if isinstance(obj, UpdateOperator):
         result.setdefault(obj.key, {})[path] = obj.value
 
@@ -96,15 +104,15 @@ def any_to_update_expr(result, path, obj, update_fields=None):
             db_field = field.metadata.get("mongoclasses", {}).get("db_field", field.name)
             field_path = db_field if path is None else f"{path}.{db_field}"
             v = getattr(obj, field.name)
-            any_to_update_expr(result, field_path, v)
+            any_to_update_expr(result, field_path, v, include)
 
     elif isinstance(obj, (list, tuple)):
         for i, v in enumerate(obj):
-            any_to_update_expr(result, f"{path}.{i}", v)
+            any_to_update_expr(result, f"{path}.{i}", v, include)
 
     elif isinstance(obj, dict):
         for k, v in obj.items():
-            any_to_update_expr(result, f"{path}.{k}", v)
+            any_to_update_expr(result, f"{path}.{k}", v, include)
 
     else:
         result.setdefault("$set", {})[path] = obj

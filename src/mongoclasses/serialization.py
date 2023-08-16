@@ -18,10 +18,10 @@ def _to_document_helper(value, /):
     
     if isinstance(value, (list, tuple)):
         return [_to_document_helper(i) for i in value]
-    
+
     if isinstance(value, Mapping):
         return {k: _to_document_helper(v) for k, v in value.items()}
-    
+
     return value
 
 
