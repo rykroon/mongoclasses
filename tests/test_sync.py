@@ -6,7 +6,7 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 import pytest
 
-from mongoclasses import delete_one, find, find_one, insert_one, update_one
+from mongoclasses import delete_one, find, find_one, insert_one, replace_one, update_one
 
 
 @pytest.fixture
@@ -25,8 +25,9 @@ def Foo(client):
     class Foo:
         collection: ClassVar[Collection] = client["test"]["foo"]
         _id: ObjectId = field(default_factory=ObjectId)
-        name: str = ""
-        description: str = ""
+        x: int = 0
+        y: int = 0
+        z: int = 0
 
     return Foo
 
@@ -54,23 +55,23 @@ class TestUpdateOne:
         f = Foo()
         insert_one(f)
 
-        f.name = "Fred"
+        f.x = 100
         update_one(f)
 
         doc = Foo.collection.find_one(f._id)
-        assert doc["name"] == "Fred"
+        assert doc["x"] == 100
 
     def test_fields(self, Foo):
         f = Foo()
         insert_one(f)
 
-        f.name = "Fred"
-        f.description = "Hello World"
-        update_one(f, fields=["name"])
+        f.x = 100
+        f.y = 200
+        update_one(f, fields=["x"])
 
         doc = Foo.collection.find_one(f._id)
-        assert doc["name"] == "Fred"
-        assert doc["description"] == ""
+        assert doc["x"] == 100
+        assert doc["y"] == 0
     
     def test_type_error(self):
         @dataclass
@@ -79,6 +80,33 @@ class TestUpdateOne:
         
         with pytest.raises(TypeError):
             update_one(Foo())
+
+
+class TestReplaceOne:
+
+    def test_replace_one(self, Foo):
+        f = Foo()
+        insert_one(f)
+
+        f.x = 100
+        f.y = 200
+        f.z = 300
+
+        replace_one(f)
+
+        doc = Foo.collection.find_one(f._id)
+
+        assert doc["x"] == 100
+        assert doc["y"] == 200
+        assert doc["z"] == 300
+    
+    def test_type_error(self):
+        @dataclass
+        class Foo:
+            ...
+        
+        with pytest.raises(TypeError):
+            replace_one(Foo())
 
 
 class TestDeleteOne:
@@ -123,13 +151,13 @@ class TestFindOne:
 
 class TestFind:
     def test_find(self, Foo):
-        f1 = Foo(name="Alice")
+        f1 = Foo(x=100)
         insert_one(f1)
 
-        f2 = Foo(name="Bob")
+        f2 = Foo(x=200)
         insert_one(f2)
 
-        f3 = Foo(name="Charlie")
+        f3 = Foo(x=300)
         insert_one(f3)
 
         cursor = find(Foo, {})
@@ -139,36 +167,36 @@ class TestFind:
             assert isinstance(obj, Foo)
     
     def test_sort_ascending(self, Foo):
-        f2 = Foo(name="Bob")
+        f2 = Foo(x=300)
         insert_one(f2)
 
-        f1 = Foo(name="Alice")
+        f1 = Foo(x=100)
         insert_one(f1)
 
-        f3 = Foo(name="Charlie")
+        f3 = Foo(x=200)
         insert_one(f3)
 
-        cursor = find(Foo, {}, sort=["name"])
+        cursor = find(Foo, {}, sort=["x"])
         objects = [foo for foo in cursor]
-        assert objects[0].name == "Alice"
-        assert objects[1].name == "Bob"
-        assert objects[2].name == "Charlie"
+        assert objects[0].x == 100
+        assert objects[1].x == 200
+        assert objects[2].x == 300
 
     def test_sort_descending(self, Foo):
-        f2 = Foo(name="Bob")
+        f2 = Foo(x=300)
         insert_one(f2)
 
-        f1 = Foo(name="Alice")
+        f1 = Foo(x=100)
         insert_one(f1)
 
-        f3 = Foo(name="Charlie")
+        f3 = Foo(x=200)
         insert_one(f3)
 
-        cursor = find(Foo, {}, sort=["-name"])
+        cursor = find(Foo, {}, sort=["-x"])
         objects = [foo for foo in cursor]
-        assert objects[0].name == "Charlie"
-        assert objects[1].name == "Bob"
-        assert objects[2].name == "Alice"
+        assert objects[0].x == 300
+        assert objects[1].x == 200
+        assert objects[2].x == 100
 
     def test_type_error(self):
         @dataclass
