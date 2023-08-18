@@ -99,7 +99,15 @@ class TestReplaceOne:
         assert doc["x"] == 100
         assert doc["y"] == 200
         assert doc["z"] == 300
-    
+
+    def test_upsert(self, Foo):
+        f = Foo()
+        replace_one(f)
+        assert Foo.collection.find_one(f._id) is None
+
+        replace_one(f, upsert=True)
+        assert Foo.collection.find_one(f._id) is not None
+
     def test_type_error(self):
         @dataclass
         class Foo:

@@ -6,7 +6,8 @@ async def insert_one(obj: MongoclassInstance, /) -> InsertOneResult: ...
 async def update_one(
     obj: MongoclassInstance, /, fields: list[str] | None
 ) -> UpdateResult: ...
-async def replace_one(obj: MongoclassInstance, /) -> UpdateResult: pass
+async def replace_one(obj: MongoclassInstance, /, upsert: bool = False) -> UpdateResult:
+    pass
 async def delete_one(obj: MongoclassInstance, /) -> DeleteResult: ...
 async def find_one(
     cls: type[MongoclassInstance],

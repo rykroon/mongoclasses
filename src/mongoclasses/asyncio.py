@@ -25,13 +25,13 @@ async def update_one(obj, /, fields=None):
     )
 
 
-async def replace_one(obj, /):
+async def replace_one(obj, /, upsert=False):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
     
     document = to_document(obj)
     return await type(obj).collection.replace_one(
-        filter={"_id": obj._id}, replacement=document
+        filter={"_id": obj._id}, replacement=document, upsert=upsert
     )
 
 

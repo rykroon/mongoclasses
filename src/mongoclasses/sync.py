@@ -54,13 +54,14 @@ def update_one(obj, /, fields=None):
     )
 
 
-def replace_one(obj, /):
+def replace_one(obj, /, upsert=False):
     """
     Replaces the object in the database.
 
     Parameters:
         obj: A mongoclass instance.
-    
+        upsert: If True, will insert the document if it does not already exist.
+
     Raises:
         TypeError: If the object is not a mongoclass instance.
 
@@ -72,7 +73,7 @@ def replace_one(obj, /):
     
     document = to_document(obj)
     return type(obj).collection.replace_one(
-        filter={"_id": obj._id}, replacement=document
+        filter={"_id": obj._id}, replacement=document, upsert=upsert
     )
 
 
