@@ -37,7 +37,6 @@ repo_url: https://github.com/rykroon/mongoclasses/
 nav:
   - Introduction: index.md
   - API Reference: apiref.md
-  - Conversions: conversions.md
 
 
 markdown_extensions:

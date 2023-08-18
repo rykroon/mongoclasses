@@ -43,6 +43,7 @@ mongoclasses.insert_one(obj)
 - Async support using motor.
 - includes the following Mongodb operations:
     - insert_one
+    - replace_one
     - update_one
     - delete_one
     - find_one
