@@ -14,6 +14,9 @@ Goals for 0.6.0
 - Add upsert logic to replace_one().
 - Add upsert logic to update_one().
 
+- Add smarter logic for from_dict().
+  - consider looking at dacite library.
+
 - Add more detailed examples in Documentation.
 - Add https to mongoclasses.rykroon.com
 
