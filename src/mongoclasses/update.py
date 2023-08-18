@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, fields, is_dataclass, InitVar
-from typing import Any, ClassVar, List, Literal, Union
+from typing import Any, ClassVar, List, Literal, TypedDict, Union
 
 
 class UpdateOperator:
@@ -7,11 +7,15 @@ class UpdateOperator:
     value: Any
 
 
+TypeSpecification = TypedDict(
+    "TypeSpecification", {"$type": Literal["timestamp", "date"]}
+)
+
 @dataclass
 class CurrentDate(UpdateOperator):
     key: ClassVar[str] = "$currentDate"
     type: InitVar[Literal["timestamp", "date"]] = "date"
-    value: dict[Literal["$type"], Literal["timestamp", "date"]] = field(init=False)
+    value: TypeSpecification = field(init=False)
 
     def __post_init__(self, type) -> None:
         self.value = {"$type": type}
