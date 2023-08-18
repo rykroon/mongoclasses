@@ -83,22 +83,33 @@ async def test_update_one_with_fields(Foo):
     assert doc["y"] == 0
 
 
-@pytest.mark.asyncio
-async def test_replace_one(Foo):
-    f = Foo()
-    await insert_one(f)
+class TestReplaceOne:
 
-    f.x = 100
-    f.y = 200
-    f.z = 300
+    @pytest.mark.asyncio
+    async def test_replace_one(self, Foo):
+        f = Foo()
+        await insert_one(f)
 
-    await replace_one(f)
+        f.x = 100
+        f.y = 200
+        f.z = 300
 
-    doc = await Foo.collection.find_one(f._id)
+        await replace_one(f)
 
-    assert doc["x"] == 100
-    assert doc["y"] == 200
-    assert doc["z"] == 300
+        doc = await Foo.collection.find_one(f._id)
+
+        assert doc["x"] == 100
+        assert doc["y"] == 200
+        assert doc["z"] == 300
+    
+    @pytest.mark.asyncio
+    async def test_upsert(self, Foo):
+        f = Foo()
+        await replace_one(f)
+        assert await Foo.collection.find_one(f._id) is None
+
+        await replace_one(f, upsert=True)
+        assert await Foo.collection.find_one(f._id) is not None
 
 
 @pytest.mark.asyncio
