@@ -19,6 +19,4 @@ def is_mongoclass(
 def _is_mongoclass_instance(obj: Any) -> TypeGuard[MongoclassInstance]:
     pass
 
-def _is_mongoclass_type(t: type, /): pass
-
-
+def _is_mongoclass_type(t: type, /) -> TypeGuard[type[MongoclassInstance]]: pass

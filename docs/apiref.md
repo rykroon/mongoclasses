@@ -11,6 +11,9 @@ ___
 ::: mongoclasses.insert_one
 ___
 
+::: mongoclasses.replace_one
+___
+
 ::: mongoclasses.update_one
 ___
 

@@ -1,4 +1,4 @@
-from dataclasses import dataclass, fields, is_dataclass
+from dataclasses import dataclass, field, fields, is_dataclass, InitVar
 from typing import Any, ClassVar, List, Literal, Union
 
 
@@ -10,10 +10,11 @@ class UpdateOperator:
 @dataclass
 class CurrentDate(UpdateOperator):
     key: ClassVar[str] = "$currentDate"
-    value: Literal["timstamp", "date"] = "date"
+    type: InitVar[Literal["timestamp", "date"]] = "date"
+    value: dict[Literal["$type"], Literal["timestamp", "date"]] = field(init=False)
 
-    def __post_init__(self):
-        self.value = {"$type": self.value}
+    def __post_init__(self, type) -> None:
+        self.value = {"$type": type}
 
 
 @dataclass

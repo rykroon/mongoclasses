@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import Any
 
-import pytest
 from mongoclasses.update import to_update_expr, CurrentDate
 
 
