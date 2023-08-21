@@ -7,7 +7,7 @@ from pymongo.collection import Collection
 import pytest
 
 from mongoclasses import delete_one, find, find_one, insert_one, replace_one, update_one
-
+from mongoclasses.operators import update as upd
 
 @pytest.fixture
 def client():
@@ -55,23 +55,10 @@ class TestUpdateOne:
         f = Foo()
         insert_one(f)
 
-        f.x = 100
-        update_one(f)
+        update_one(f, upd.set(x=100))
 
         doc = Foo.collection.find_one(f._id)
         assert doc["x"] == 100
-
-    def test_fields(self, Foo):
-        f = Foo()
-        insert_one(f)
-
-        f.x = 100
-        f.y = 200
-        update_one(f, fields=["x"])
-
-        doc = Foo.collection.find_one(f._id)
-        assert doc["x"] == 100
-        assert doc["y"] == 0
     
     def test_type_error(self):
         @dataclass

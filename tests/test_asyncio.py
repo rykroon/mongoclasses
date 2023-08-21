@@ -10,9 +10,7 @@ from mongoclasses import find
 from mongoclasses.asyncio import (
     delete_one, find_one, insert_one, replace_one, update_one
 )
-
-from mongoclasses.update import Inc
-
+from mongoclasses.operators import update as upd
 
 @pytest.fixture
 def client():
@@ -62,25 +60,10 @@ async def test_update_one(Foo):
     f = Foo()
     await insert_one(f)
 
-    f.x = Inc(100)
-    await update_one(f)
+    await update_one(f, upd.set(x=100))
 
     doc = await Foo.collection.find_one(f._id)
     assert doc["x"] == 100
-
-
-@pytest.mark.asyncio
-async def test_update_one_with_fields(Foo):
-    f = Foo()
-    await insert_one(f)
-
-    f.x = Inc(100)
-    f.y = Inc(100)
-    await update_one(f, fields=["x"])
-
-    doc = await Foo.collection.find_one(f._id)
-    assert doc["x"] == 100
-    assert doc["y"] == 0
 
 
 class TestReplaceOne:

@@ -5,7 +5,6 @@ from .mongoclasses import (
     is_mongoclass, _is_mongoclass_instance
 )
 from .serialization import to_document, from_document
-from .update import to_update_expr
 
 
 def insert_one(obj, /):
@@ -30,14 +29,13 @@ def insert_one(obj, /):
     return result
 
 
-def update_one(obj, /, fields=None):
+def update_one(obj, update, /):
     """
     Updates the object in the database.
 
     Parameters:
         obj: A mongoclass instance.
-        fields: A list of field names. If provided, only the fields listed will be \
-            updated in the database.
+        update: An update document.
 
     Raises:
         TypeError: If the object is not a mongoclass instance.
@@ -48,10 +46,7 @@ def update_one(obj, /, fields=None):
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
-    update_document = to_update_expr(obj, include=fields)
-    return type(obj).collection.update_one(
-        filter={"_id": obj._id}, update=update_document
-    )
+    return type(obj).collection.update_one(filter={"_id": obj._id}, update=update)
 
 
 def replace_one(obj, /, upsert=False):

@@ -4,7 +4,7 @@ from .mongoclasses import (
 )
 from .serialization import to_document, from_document
 from .sync import insert_one, delete_one, find_one, find, replace_one, update_one
-from . import update
+from . import operators
 
 __all__ = [
     "asyncio",
@@ -18,5 +18,5 @@ __all__ = [
     "find_one",
     "find",
     "replace_one",
-    "update"
+    "operators"
 ]
