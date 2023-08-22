@@ -25,6 +25,16 @@ Pull = TypedDict("Pull", {"$pull": Mapping[str, Any]})
 Push = TypedDict("Push", {"$push": Mapping[str, Any]})
 PullAll = TypedDict("PullAll", {"$pullAll": Mapping[str, Sequence[Any]]})
 
+Each = TypedDict("Each", {"$each": Sequence[Any]})
+Position = TypedDict("Position", {"$position": int})
+Slice = TypedDict("Slice", {"$slice": int})
+
+SortSpecification: TypeAlias = Literal[-1, 1] | Mapping[str, Literal[-1, 1]]
+Sort = TypedDict("Sort", {"$sort": SortSpecification})
+
+AndOrXor: TypeAlias = Literal["and", "or", "xor"]
+Bit = TypedDict("Bit", {"$bit": Mapping[str, Mapping[AndOrXor, int]]})
+
 def current_date(
     arg: Mapping[str, bool | TypeSpecification]
     | Sequence[tuple[str, bool | TypeSpecification]]
@@ -135,28 +145,27 @@ def pull_all(
 # Update Operator Modifiers
 # https://www.mongodb.com/docs/manual/reference/operator/update-array/#update-operator-modifiers
 
-def each(values: Sequence[Any]):
+def each(values: Sequence[Any]) -> Each:
     pass
 
-def position(num: int, /):
+def position(num: int, /) -> Position:
     pass
 
-def slice(num: int, /):
+def slice(num: int, /) -> Slice:
     pass
 
-def sort(sort_specification: Literal[-1, 1] | Mapping[str, Literal[-1, 1]], /):
+def sort(sort_specification: SortSpecification, /) -> Sort:
     pass
 
 # Bitwise Update Operators
 # https://www.mongodb.com/docs/manual/reference/operator/update-bitwise/#bitwise-update-operator
 
-and_or_xor: TypeAlias = Literal["and", "or", "xor"]
 
 def bit(
-    arg: Mapping[str, Mapping[and_or_xor, int]]
-    | Sequence[tuple[str, Mapping[and_or_xor, int]]]
+    arg: Mapping[str, Mapping[AndOrXor, int]]
+    | Sequence[tuple[str, Mapping[AndOrXor, int]]]
     | None = None,
     /,
-    **kwargs,
-):
+    **kwargs: Mapping[AndOrXor, int],
+) -> Bit:
     pass
