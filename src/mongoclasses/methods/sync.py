@@ -1,10 +1,10 @@
 from motor.motor_asyncio import AsyncIOMotorCursor
 
-from .cursors import AsyncCursor, Cursor
-from .mongoclasses import (
+from ..cursors import AsyncCursor, Cursor
+from ..mongoclasses import (
     is_mongoclass, _is_mongoclass_instance
 )
-from .serialization import to_document, from_document
+from ..serialization import to_document, from_document
 
 
 def insert_one(obj, /):

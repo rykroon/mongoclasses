@@ -1,9 +1,10 @@
-from . import asyncio
 from .mongoclasses import (
     is_mongoclass, _is_mongoclass_instance
 )
 from .serialization import to_document, from_document
-from .sync import insert_one, delete_one, find_one, find, replace_one, update_one
+from .methods import (
+    asyncio, insert_one, delete_one, find_one, find, replace_one, update_one
+)
 from . import operators
 
 __all__ = [

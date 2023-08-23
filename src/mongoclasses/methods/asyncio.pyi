@@ -1,6 +1,6 @@
 from typing import Any
 from pymongo.results import DeleteResult, InsertOneResult, UpdateResult
-from .mongoclasses import MongoclassInstance
+from ..mongoclasses import MongoclassInstance
 
 async def insert_one(obj: MongoclassInstance, /) -> InsertOneResult: ...
 async def update_one(

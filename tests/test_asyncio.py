@@ -7,7 +7,7 @@ import pytest_asyncio
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
 from mongoclasses import find
-from mongoclasses.asyncio import (
+from mongoclasses.methods.asyncio import (
     delete_one, find_one, insert_one, replace_one, update_one
 )
 from mongoclasses.operators import update as upd
