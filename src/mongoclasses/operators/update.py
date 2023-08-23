@@ -58,7 +58,7 @@ def push(arg=None, /, **kwargs):
 
 
 def pull_all(arg=None, /, **kwargs):
-    return {"$pulAll": kwargs if arg is None else dict(arg, **kwargs)}
+    return {"$pullAll": kwargs if arg is None else dict(arg, **kwargs)}
 
 
 # Update Operator Modifiers
