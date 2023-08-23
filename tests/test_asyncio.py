@@ -146,8 +146,8 @@ async def test_not_a_mongoclass():
         await insert_one(Foo())
     
     with pytest.raises(TypeError):
-        await update_one(Foo())
-    
+        await update_one(Foo(), {})
+
     with pytest.raises(TypeError):
         await replace_one(Foo())
     

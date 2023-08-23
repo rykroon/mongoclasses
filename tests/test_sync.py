@@ -66,7 +66,7 @@ class TestUpdateOne:
             ...
         
         with pytest.raises(TypeError):
-            update_one(Foo())
+            update_one(Foo(), {})
 
 
 class TestReplaceOne:
