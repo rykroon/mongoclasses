@@ -74,6 +74,13 @@ def unset(arg=None, /, **kwargs):
     return {"$unset": kwargs if arg is None else dict(arg, **kwargs)}
 
 
+def unset_fields(*fields):
+    """
+    Helper method that calls unset() ...
+    """
+    return unset({f: "" for f in fields})
+
+
 # Array Update Operators
 # https://www.mongodb.com/docs/manual/reference/operator/update-array/#array-update-operators
 
@@ -120,7 +127,7 @@ def pull_all(arg=None, /, **kwargs):
 # Update Operator Modifiers
 # https://www.mongodb.com/docs/manual/reference/operator/update-array/#update-operator-modifiers
 
-def each(values):
+def each(values, /):
     return {"$each": values}
 
 
@@ -145,3 +152,21 @@ def bit(arg=None, /, **kwargs):
         A dictionary representing an Update Document with a $bit operator.
     """
     return {"$bit": kwargs if arg is None else dict(arg, **kwargs)}
+
+
+def bit_and(arg=None, /, **kwargs):
+    d = kwargs if arg is None else dict(arg, **kwargs)
+    d = {k: {"and": v}for k, v in d.items()}
+    return bit(d)
+
+
+def bit_or(arg=None, /, **kwargs):
+    d = kwargs if arg is None else dict(arg, **kwargs)
+    d = {k: {"or": v}for k, v in d.items()}
+    return bit(d)
+
+
+def bit_xor(arg=None, /, **kwargs):
+    d = kwargs if arg is None else dict(arg, **kwargs)
+    d = {k: {"xor": v}for k, v in d.items()}
+    return bit(d)
