@@ -9,6 +9,12 @@ def current_date(arg=None, /, **kwargs):
     """
     return {"$currentDate": kwargs if arg is None else dict(arg, **kwargs)}
 
+def set_current_date(*fields):
+    """
+    Helper method for setting fields to current date.
+    """
+    return current_date({f: True for f in fields})
+
 
 def inc(arg=None, /, **kwargs):
     """
@@ -156,17 +162,17 @@ def bit(arg=None, /, **kwargs):
 
 def bit_and(arg=None, /, **kwargs):
     d = kwargs if arg is None else dict(arg, **kwargs)
-    d = {k: {"and": v}for k, v in d.items()}
+    d = {k: {"and": v} for k, v in d.items()}
     return bit(d)
 
 
 def bit_or(arg=None, /, **kwargs):
     d = kwargs if arg is None else dict(arg, **kwargs)
-    d = {k: {"or": v}for k, v in d.items()}
+    d = {k: {"or": v} for k, v in d.items()}
     return bit(d)
 
 
 def bit_xor(arg=None, /, **kwargs):
     d = kwargs if arg is None else dict(arg, **kwargs)
-    d = {k: {"xor": v}for k, v in d.items()}
+    d = {k: {"xor": v} for k, v in d.items()}
     return bit(d)
