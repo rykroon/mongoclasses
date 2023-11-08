@@ -1,31 +1,29 @@
 from collections.abc import Mapping
 from dataclasses import is_dataclass, fields, MISSING
 import inspect
+from typing import Any, Dict, Type, TypeVar
+
+from .utils import get_field_name
 
 
-def to_document(obj, /):
-    result = {}
-    for field in fields(obj):
-        db_field = field.metadata.get("mongoclasses", {}).get("db_field", field.name)
-        value = _to_document_helper(getattr(obj, field.name))
-        result[db_field] = value
-    return result
+def to_document(obj: Any, /):
+    if is_dataclass(obj) and not inspect.isclass(obj):
+        field_names = (get_field_name(field) for field in fields(obj))
+        return {field_name: to_document(getattr(obj, field_name)) for field_name in field_names}
+
+    if isinstance(obj, (list, tuple, set)):
+        return [to_document(item) for item in obj]
+
+    if isinstance(obj, Mapping):
+        return {k: to_document(v) for k, v in obj.items()}
+
+    return obj
 
 
-def _to_document_helper(value, /):
-    if is_dataclass(value):
-        return to_document(value)
-
-    if isinstance(value, (list, tuple)):
-        return [_to_document_helper(i) for i in value]
-
-    if isinstance(value, Mapping):
-        return {k: _to_document_helper(v) for k, v in value.items()}
-
-    return value
+T = TypeVar("T")
 
 
-def from_document(cls, /, data):
+def from_document(cls: Type[T], /, data: Dict[str, Any]) -> T:
     """
     Attempts to create a dataclass instance from a dictionary.
     """
@@ -38,10 +36,10 @@ def from_document(cls, /, data):
     init_values = {}
     non_init_values = {}
     for field in fields(cls):
-        db_field = field.metadata.get("mongoclasses", {}).get("db_field", field.name)
+        db_field = get_field_name(field)
         if db_field in data:
             value = data[db_field]
-        else:
+        else: # maybe remove this else block
             if field.default is not MISSING:
                 value = field.default
             elif field.default_factory is not MISSING:
