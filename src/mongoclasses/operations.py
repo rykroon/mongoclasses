@@ -1,10 +1,24 @@
 from motor.motor_asyncio import AsyncIOMotorCursor
 
-from ..cursors import AsyncCursor, Cursor
-from ..mongoclasses import (
+from .cursors import AsyncCursor, Cursor
+from .mongoclasses import (
     is_mongoclass, _is_mongoclass_instance
 )
-from ..serialization import to_document, from_document
+from .serialization import to_document, from_document
+
+
+__all__ = [
+    "adelete_one",
+    "afind_one",
+    "ainsert_one",
+    "areplace_one",
+    "aupdate_one",
+    "delete_one",
+    "find_one",
+    "insert_one",
+    "replace_one",
+    "update_one",
+]
 
 
 def insert_one(obj, /):
@@ -29,6 +43,16 @@ def insert_one(obj, /):
     return result
 
 
+async def ainsert_one(obj, /):
+    if not _is_mongoclass_instance(obj):
+        raise TypeError("Not a mongoclass instance.")
+
+    document = to_document(obj)
+    result = await type(obj).collection.insert_one(document)
+    obj._id = result.inserted_id
+    return result
+
+
 def update_one(obj, update, /):
     """
     Updates the object in the database.
@@ -47,6 +71,13 @@ def update_one(obj, update, /):
         raise TypeError("Not a mongoclass instance.")
 
     return type(obj).collection.update_one(filter={"_id": obj._id}, update=update)
+
+
+async def aupdate_one(obj, update, /):
+    if not _is_mongoclass_instance(obj):
+        raise TypeError("Not a mongoclass instance.")
+
+    return await type(obj).collection.update_one(filter={"_id": obj._id}, update=update)
 
 
 def replace_one(obj, /, upsert=False):
@@ -72,6 +103,16 @@ def replace_one(obj, /, upsert=False):
     )
 
 
+async def areplace_one(obj, /, upsert=False):
+    if not _is_mongoclass_instance(obj):
+        raise TypeError("Not a mongoclass instance.")
+    
+    document = to_document(obj)
+    return await type(obj).collection.replace_one(
+        filter={"_id": obj._id}, replacement=document, upsert=upsert
+    )
+
+
 def delete_one(obj, /):
     """
     Deletes the object from the database.
@@ -89,6 +130,13 @@ def delete_one(obj, /):
         raise TypeError("Not a mongoclass instance.")
 
     return type(obj).collection.delete_one({"_id": obj._id})
+
+
+async def adelete_one(obj, /):
+    if not _is_mongoclass_instance(obj):
+        raise TypeError("Not a mongoclass instance.")
+
+    return await type(obj).collection.delete_one({"_id": obj._id})
 
 
 def find_one(cls, /, filter=None):
@@ -109,6 +157,16 @@ def find_one(cls, /, filter=None):
         raise TypeError("Not a mongoclass.")
 
     document = cls.collection.find_one(filter=filter)
+    if document is None:
+        return None
+    return from_document(cls, document)
+
+
+async def afind_one(cls, /, filter=None):
+    if not is_mongoclass(cls):
+        raise TypeError("Not a mongoclass.")
+
+    document = await cls.collection.find_one(filter=filter)
     if document is None:
         return None
     return from_document(cls, document)

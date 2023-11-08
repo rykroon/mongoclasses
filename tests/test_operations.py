@@ -7,10 +7,9 @@ import pytest_asyncio
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
 from mongoclasses import find
-from mongoclasses.methods.asyncio import (
+from mongoclasses.operations import (
     delete_one, find_one, insert_one, replace_one, update_one
 )
-from mongoclasses.operators import update as upd
 
 @pytest.fixture
 def client():
@@ -60,7 +59,7 @@ async def test_update_one(Foo):
     f = Foo()
     await insert_one(f)
 
-    await update_one(f, upd.set(x=100))
+    await update_one(f, {"$set": {"x": 100}})
 
     doc = await Foo.collection.find_one(f._id)
     assert doc["x"] == 100
