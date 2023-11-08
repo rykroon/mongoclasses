@@ -7,10 +7,14 @@ import pytest_asyncio
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
 from mongoclasses import find
-from mongoclasses.methods.asyncio import (
-    delete_one, find_one, insert_one, replace_one, update_one
+from mongoclasses.operations import (
+    delete_one,
+    find_one,
+    insert_one,
+    replace_one,
+    update_one,
 )
-from mongoclasses.operators import update as upd
+
 
 @pytest.fixture
 def client():
@@ -60,14 +64,13 @@ async def test_update_one(Foo):
     f = Foo()
     await insert_one(f)
 
-    await update_one(f, upd.set(x=100))
+    await update_one(f, {"$set": {"x": 100}})
 
     doc = await Foo.collection.find_one(f._id)
     assert doc["x"] == 100
 
 
 class TestReplaceOne:
-
     @pytest.mark.asyncio
     async def test_replace_one(self, Foo):
         f = Foo()
@@ -84,7 +87,7 @@ class TestReplaceOne:
         assert doc["x"] == 100
         assert doc["y"] == 200
         assert doc["z"] == 300
-    
+
     @pytest.mark.asyncio
     async def test_upsert(self, Foo):
         f = Foo()
@@ -141,16 +144,16 @@ async def test_not_a_mongoclass():
     @dataclass
     class Foo:
         ...
-    
+
     with pytest.raises(TypeError):
         await insert_one(Foo())
-    
+
     with pytest.raises(TypeError):
         await update_one(Foo(), {})
 
     with pytest.raises(TypeError):
         await replace_one(Foo())
-    
+
     with pytest.raises(TypeError):
         await delete_one(Foo())
 

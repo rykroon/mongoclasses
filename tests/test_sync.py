@@ -7,7 +7,7 @@ from pymongo.collection import Collection
 import pytest
 
 from mongoclasses import delete_one, find, find_one, insert_one, replace_one, update_one
-from mongoclasses.operators import update as upd
+
 
 @pytest.fixture
 def client():
@@ -33,7 +33,6 @@ def Foo(client):
 
 
 class TestInsertOne:
-
     def test_insert_one(self, Foo):
         # test scenario where an _id is generated before insertion.
         f = Foo()
@@ -45,7 +44,7 @@ class TestInsertOne:
         @dataclass
         class Foo:
             ...
-        
+
         with pytest.raises(TypeError):
             insert_one(Foo())
 
@@ -55,22 +54,21 @@ class TestUpdateOne:
         f = Foo()
         insert_one(f)
 
-        update_one(f, upd.set(x=100))
+        update_one(f, {"$set": {"x": 100}})
 
         doc = Foo.collection.find_one(f._id)
         assert doc["x"] == 100
-    
+
     def test_type_error(self):
         @dataclass
         class Foo:
             ...
-        
+
         with pytest.raises(TypeError):
             update_one(Foo(), {})
 
 
 class TestReplaceOne:
-
     def test_replace_one(self, Foo):
         f = Foo()
         insert_one(f)
@@ -99,7 +97,7 @@ class TestReplaceOne:
         @dataclass
         class Foo:
             ...
-        
+
         with pytest.raises(TypeError):
             replace_one(Foo())
 
@@ -111,18 +109,17 @@ class TestDeleteOne:
         delete_one(f)
 
         assert Foo.collection.find_one(f._id) is None
-    
+
     def test_type_error(self):
         @dataclass
         class Foo:
             ...
-        
+
         with pytest.raises(TypeError):
             delete_one(Foo())
 
 
 class TestFindOne:
-
     def test_success(self, Foo):
         f = Foo()
         insert_one(f)
@@ -134,7 +131,7 @@ class TestFindOne:
         # find document that does not exist.
         result = find_one(Foo, {"_id": "abcdef"})
         assert result is None
-    
+
     def test_type_error(self):
         @dataclass
         class Foo:
@@ -160,7 +157,7 @@ class TestFind:
         assert len(objects) == 3
         for obj in objects:
             assert isinstance(obj, Foo)
-    
+
     def test_sort_ascending(self, Foo):
         f2 = Foo(x=300)
         insert_one(f2)
@@ -197,6 +194,6 @@ class TestFind:
         @dataclass
         class Foo:
             ...
-        
+
         with pytest.raises(TypeError):
             find(Foo, {})

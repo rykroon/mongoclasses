@@ -15,7 +15,7 @@ def to_document(obj, /):
 def _to_document_helper(value, /):
     if is_dataclass(value):
         return to_document(value)
-    
+
     if isinstance(value, (list, tuple)):
         return [_to_document_helper(i) for i in value]
 
@@ -47,7 +47,7 @@ def from_document(cls, /, data):
             elif field.default_factory is not MISSING:
                 value = field.default_factory()
             else:
-                value = MISSING 
+                value = MISSING
 
         if isinstance(value, Mapping) and is_dataclass(field.type):
             value = from_document(field.type, value)

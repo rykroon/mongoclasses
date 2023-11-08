@@ -15,7 +15,7 @@ class TestIsMongoclass:
     def test_not_a_dataclass(self):
         class Foo:
             ...
-        
+
         assert is_mongoclass(Foo) is False
         assert is_mongoclass(Foo()) is False
 
@@ -26,7 +26,7 @@ class TestIsMongoclass:
 
         assert is_mongoclass(Foo) is False
         assert is_mongoclass(Foo()) is False
-    
+
     def test_collection_not_classvar(self):
         @dataclass
         class Foo:
@@ -39,7 +39,7 @@ class TestIsMongoclass:
         @dataclass
         class Foo:
             collection: ClassVar[Collection]
-        
+
         assert is_mongoclass(Foo) is False
         assert is_mongoclass(Foo()) is False
 
@@ -51,7 +51,7 @@ class TestIsMongoclass:
 
         assert is_mongoclass(MyClass) is True
         assert is_mongoclass(MyClass()) is True
-    
+
     def test_id_field_override(self):
         @dataclass
         class MyClass:
