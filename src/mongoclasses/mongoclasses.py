@@ -2,6 +2,8 @@ from dataclasses import is_dataclass, fields, _FIELD_CLASSVAR
 from functools import lru_cache
 import inspect
 
+from .utils import get_field_name
+
 
 def is_mongoclass(obj, /):
     """
@@ -33,8 +35,8 @@ def _is_mongoclass_type(t, /):
         return False
 
     for field in fields(t):
-        db_field = field.metadata.get("mongoclasses", {}).get("db_field", field.name)
-        if db_field == "_id":
+        field_name = get_field_name(field)
+        if field_name == "_id":
             return True
 
     return False
