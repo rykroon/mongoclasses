@@ -43,7 +43,7 @@ dependencies = [
   "coverage",
 ]
 [tool.hatch.envs.test.scripts]
-test = "coverage run -m pytest"
+test = "coverage run --source src -m pytest"
 cov-report = "coverage report -m"
 
 [[tool.hatch.envs.test.matrix]]
