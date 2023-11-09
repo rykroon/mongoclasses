@@ -13,10 +13,10 @@ class FieldInfo:
 
 
 def get_field_info(field: Field) -> Optional[FieldInfo]:
-    if not isinstance(field.type, Annotated):
+    if get_origin(field.type) is not Annotated:
         return None
 
-    for annotation in field.type.__metadata__: 
+    for annotation in field.type.__metadata__:
         if isinstance(annotation, FieldInfo):
             return annotation
 
