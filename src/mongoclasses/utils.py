@@ -25,7 +25,10 @@ def get_field_info(field: Field) -> Optional[FieldInfo]:
 
 def get_field_name(field: Field):
     field_info = get_field_info(field)
-    return field.name if field_info is None else field_info.db_field
+    if field_info is None or field_info.db_field is None:
+        return field.name
+
+    return field_info.db_field
 
 
 def resolve_type(t: Type) -> Union[Type, List[Type]]:

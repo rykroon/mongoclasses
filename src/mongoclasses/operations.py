@@ -1,7 +1,7 @@
 from motor.motor_asyncio import AsyncIOMotorCursor
 
 from .cursors import AsyncCursor, Cursor
-from .mongoclasses import is_mongoclass, _is_mongoclass_instance
+from .types import is_mongoclass, is_mongoclass_instance
 from .serialization import to_document, from_document
 
 
@@ -18,7 +18,7 @@ def insert_one(obj, /):
     Returns:
         A pymongo `InsertOneResult` object.
     """
-    if not _is_mongoclass_instance(obj):
+    if not is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
     document = to_document(obj)
@@ -28,7 +28,7 @@ def insert_one(obj, /):
 
 
 async def ainsert_one(obj, /):
-    if not _is_mongoclass_instance(obj):
+    if not is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
     document = to_document(obj)
@@ -51,14 +51,14 @@ def update_one(obj, update, /):
     Returns:
         A pymongo `UpdateResult` object.
     """
-    if not _is_mongoclass_instance(obj):
+    if not is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
     return type(obj).collection.update_one(filter={"_id": obj._id}, update=update)
 
 
 async def aupdate_one(obj, update, /):
-    if not _is_mongoclass_instance(obj):
+    if not is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
     return await type(obj).collection.update_one(filter={"_id": obj._id}, update=update)
@@ -78,7 +78,7 @@ def replace_one(obj, /, upsert=False):
     Returns:
         A pymongo `UpdateResult` object.
     """
-    if not _is_mongoclass_instance(obj):
+    if not is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
     document = to_document(obj)
@@ -88,7 +88,7 @@ def replace_one(obj, /, upsert=False):
 
 
 async def areplace_one(obj, /, upsert=False):
-    if not _is_mongoclass_instance(obj):
+    if not is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
     document = to_document(obj)
@@ -110,14 +110,14 @@ def delete_one(obj, /):
     Returns:
         A pymongo `DeleteResult` object.
     """
-    if not _is_mongoclass_instance(obj):
+    if not is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
     return type(obj).collection.delete_one({"_id": obj._id})
 
 
 async def adelete_one(obj, /):
-    if not _is_mongoclass_instance(obj):
+    if not is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
     return await type(obj).collection.delete_one({"_id": obj._id})

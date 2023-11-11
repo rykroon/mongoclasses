@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from dataclasses import is_dataclass, fields, MISSING
+from dataclasses import is_dataclass, fields
 import inspect
 from typing import Any, Dict, Type, TypeVar
 
