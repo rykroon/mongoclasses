@@ -1,5 +1,5 @@
-from dataclasses import dataclass, Field
-from typing import List, Optional, Type, Union
+from dataclasses import dataclass, fields, Field
+from typing import Any, List, Optional, Type, Union
 from types import UnionType
 from typing_extensions import get_args, get_origin, Annotated
 
@@ -29,6 +29,14 @@ def get_field_name(field: Field):
         return field.name
 
     return field_info.db_field
+
+
+def set_id(obj, id: Any):
+    for field in fields(obj):
+        if get_field_name(field) == "_id":
+            setattr(obj, field.name, id)
+            return
+    raise TypeError(f"Object {obj} has no _id field")
 
 
 def resolve_type(t: Type) -> Union[Type, List[Type]]:

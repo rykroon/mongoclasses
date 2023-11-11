@@ -1,8 +1,8 @@
-from motor.motor_asyncio import AsyncIOMotorCursor
+from typing import List, Literal, Optional, Tuple
 
-from .cursors import AsyncCursor, Cursor
-from .types import is_mongoclass, is_mongoclass_instance
 from .serialization import to_document, from_document
+from .types import is_mongoclass, is_mongoclass_instance
+from .utils import set_id
 
 
 def insert_one(obj, /):
@@ -23,7 +23,7 @@ def insert_one(obj, /):
 
     document = to_document(obj)
     result = type(obj).collection.insert_one(document)
-    obj._id = result.inserted_id
+    set_id(obj, result.inserted_id)
     return result
 
 
@@ -33,7 +33,7 @@ async def ainsert_one(obj, /):
 
     document = to_document(obj)
     result = await type(obj).collection.insert_one(document)
-    obj._id = result.inserted_id
+    set_id(obj, result.inserted_id)
     return result
 
 
@@ -156,7 +156,14 @@ async def afind_one(cls, /, filter=None):
     return from_document(cls, document)
 
 
-def find(cls, /, filter=None, skip=0, limit=0, sort=None):
+def find(
+    cls,
+    /,
+    filter=None,
+    skip: int = 0,
+    limit: int = 0,
+    sort: Optional[List[Tuple[str, Literal[1, -1]]]] = None,
+):
     """
     Performs a query on the mongoclass.
 
@@ -178,10 +185,4 @@ def find(cls, /, filter=None, skip=0, limit=0, sort=None):
     if not is_mongoclass(cls):
         raise TypeError("Not a mongoclass.")
 
-    if sort is not None:
-        sort = [(f[1:], -1) if f.startswith("-") else (f, 1) for f in sort]
-
-    cursor = cls.collection.find(filter=filter, skip=skip, limit=limit, sort=sort)
-    if isinstance(cursor, AsyncIOMotorCursor):
-        return AsyncCursor(cursor=cursor, dataclass=cls)
-    return Cursor(cursor=cursor, dataclass=cls)
+    return cls.collection.find(filter=filter, skip=skip, limit=limit, sort=sort)

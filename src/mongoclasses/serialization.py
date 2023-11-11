@@ -1,13 +1,13 @@
 from collections.abc import Mapping
 from dataclasses import is_dataclass, fields
-import inspect
 from typing import Any, Dict, Type, TypeVar
 
+from .types import is_dataclass_instance, is_dataclass_type, Mongoclass
 from .utils import get_field_name
 
 
 def to_document(obj: Any, /):
-    if is_dataclass(obj) and not inspect.isclass(obj):
+    if is_dataclass_instance(obj):
         field_names = (get_field_name(field) for field in fields(obj))
         return {
             field_name: to_document(getattr(obj, field_name))
@@ -23,17 +23,14 @@ def to_document(obj: Any, /):
     return obj
 
 
-T = TypeVar("T")
+T = TypeVar("T", bound=Mongoclass)
 
 
 def from_document(cls: Type[T], /, data: Dict[str, Any]) -> T:
     """
     Attempts to create a dataclass instance from a dictionary.
     """
-    if not inspect.isclass(cls):
-        raise TypeError("Object must be a dataclass type.")
-
-    if not is_dataclass(cls):
+    if not is_dataclass_type(cls):
         raise TypeError("Object must be a dataclass type.")
 
     init_values = {}

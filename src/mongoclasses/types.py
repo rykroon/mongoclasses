@@ -23,7 +23,7 @@ def is_dataclass_type(obj: Any) -> TypeGuard[Type[Dataclass]]:
         return False
 
     return inspect.isclass(obj)
-                                        
+
 
 def is_dataclass_instance(obj: Any) -> TypeGuard[Dataclass]:
     return is_dataclass_type(type(obj))
