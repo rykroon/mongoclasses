@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from _typeshed import DataclassInstance
 
 
-def to_document(obj: "DataclassInstance", /) -> Dict[str, Any]:
+def to_document(obj: Any, /) -> Any:
     if is_dataclass_instance(obj):
         field_names = (get_field_name(field) for field in fields(obj))
         return {

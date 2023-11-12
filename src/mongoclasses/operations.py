@@ -1,6 +1,5 @@
-from collections.abc import AsyncIterator, Iterator
 from typing import Any, Dict, List, Literal, Optional, Tuple, Type, TYPE_CHECKING, Union
-
+from typing_extensions import AsyncIterator, Iterator
 from pymongo.cursor import Cursor
 from pymongo.results import InsertOneResult, UpdateResult, DeleteResult
 from motor.motor_asyncio import AsyncIOMotorCursor
@@ -214,13 +213,13 @@ def find(
     return cls.collection.find(filter=filter, skip=skip, limit=limit, sort=sort)
 
 
-def iter_objects(cls: Type["DataclassInstance"], cursor: Cursor) -> Iterator:
+def iter_objects(cls: Type["DataclassInstance"], cursor: Cursor) -> Iterator["DataclassInstance"]:
     for document in cursor:
         yield from_document(cls, document)
 
 
 async def aiter_objects(
     cls: Type["DataclassInstance"], cursor: AsyncIOMotorCursor
-) -> AsyncIterator:
+) -> AsyncIterator["DataclassInstance"]:
     async for document in cursor:
         yield from_document(cls, document)
