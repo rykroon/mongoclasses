@@ -1,6 +1,10 @@
 from dataclasses import dataclass, fields, Field
-from typing import Any, List, Optional, Type, Union
+from typing import Any, List, Optional, Type, Union, TYPE_CHECKING
 from typing_extensions import get_args, get_origin, Annotated
+
+
+if TYPE_CHECKING:
+    from .types import DataclassInstance, MongoclassInstance
 
 
 @dataclass(frozen=True)
@@ -30,19 +34,19 @@ def get_field_name(field: Field) -> str:
     return field_info.db_field
 
 
-def get_id_field(cls: Type) -> Field:
+def get_id_field(cls: Type["DataclassInstance"]) -> Field:
     for field in fields(cls):
         if get_field_name(field) == "_id":
             return field
     raise TypeError(f"Object {cls} has no _id field")
 
 
-def set_id(obj, id: Any):
+def set_id(obj: "MongoclassInstance", id: Any) -> None:
     field = get_id_field(type(obj))
     setattr(obj, field.name, id)
 
 
-def get_id(obj):
+def get_id(obj: "MongoclassInstance") -> Any:
     field = get_id_field(type(obj))
     return getattr(obj, field.name)
 
@@ -64,10 +68,11 @@ def resolve_type(t: Type) -> Union[Type, List[Type]]:
 def is_union(t: Type) -> bool:
     if get_origin(t) is Union:
         return True
-    
+
     try:
         # UnionType was introduced in python 3.10
         from types import UnionType
+
         return isinstance(t, UnionType)
 
     except ImportError:

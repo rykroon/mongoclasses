@@ -1,6 +1,6 @@
-from dataclasses import is_dataclass, Field, _DataclassParams, _FIELD_CLASSVAR
+from dataclasses import is_dataclass, _FIELD_CLASSVAR
 import inspect
-from typing import Any, ClassVar, Dict, Protocol, Type, Union
+from typing import Any, ClassVar, Type, Union, TYPE_CHECKING
 from typing_extensions import TypeGuard
 
 from pymongo.collection import Collection
@@ -9,27 +9,27 @@ from motor.motor_asyncio import AsyncIOMotorCollection
 from .utils import get_id_field
 
 
-class Dataclass(Protocol):
-    __dataclass_fields__: Dict[str, Field]
-    __dataclass_params__: _DataclassParams
+if TYPE_CHECKING:
+    from _typeshed import DataclassInstance
+
+    class MongoclassInstance(DataclassInstance):
+        collection: ClassVar[Union[Collection, AsyncIOMotorCollection]]
 
 
-class Mongoclass(Dataclass):
-    collection: ClassVar[Union[Collection, AsyncIOMotorCollection]]
-
-
-def is_dataclass_type(obj: Any) -> TypeGuard[Type[Dataclass]]:
+def is_dataclass_type(obj: Any) -> TypeGuard[Type["DataclassInstance"]]:
     if not is_dataclass(obj):
         return False
 
     return inspect.isclass(obj)
 
 
-def is_dataclass_instance(obj: Any) -> TypeGuard[Dataclass]:
+def is_dataclass_instance(obj: Any) -> TypeGuard["DataclassInstance"]:
     return is_dataclass_type(type(obj))
 
 
-def is_mongoclass(obj: Any) -> TypeGuard[Union[Mongoclass, Type[Mongoclass]]]:
+def is_mongoclass(
+    obj: Any,
+) -> TypeGuard[Union["MongoclassInstance", Type["MongoclassInstance"]]]:
     if not is_dataclass(obj):
         return False
 
@@ -50,12 +50,12 @@ def is_mongoclass(obj: Any) -> TypeGuard[Union[Mongoclass, Type[Mongoclass]]]:
         return True
 
 
-def is_mongoclass_type(obj: Any) -> TypeGuard[Type[Mongoclass]]:
+def is_mongoclass_type(obj: Any) -> TypeGuard[Type["MongoclassInstance"]]:
     if not is_mongoclass(obj):
         return False
 
     return inspect.isclass(obj)
 
 
-def is_mongoclass_instance(obj: Any) -> TypeGuard[Mongoclass]:
+def is_mongoclass_instance(obj: Any) -> TypeGuard["MongoclassInstance"]:
     return is_mongoclass_type(type(obj))

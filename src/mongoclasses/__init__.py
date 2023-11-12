@@ -11,7 +11,7 @@ from .operations import (
     find_one,
     find,
     replace_one,
-    update_one
+    update_one,
 )
 from .types import is_mongoclass
 from .utils import FieldInfo, get_id

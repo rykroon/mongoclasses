@@ -1,12 +1,15 @@
 from collections.abc import Mapping
 from dataclasses import is_dataclass, fields
-from typing import Any, Dict, Type, TypeVar
+from typing import Any, Dict, Type, TYPE_CHECKING
 
-from .types import is_dataclass_instance, is_dataclass_type, Mongoclass
+from .types import is_dataclass_instance, is_dataclass_type
 from .utils import get_field_name
 
+if TYPE_CHECKING:
+    from _typeshed import DataclassInstance
 
-def to_document(obj: Any, /):
+
+def to_document(obj: "DataclassInstance", /) -> Dict[str, Any]:
     if is_dataclass_instance(obj):
         field_names = (get_field_name(field) for field in fields(obj))
         return {
@@ -23,10 +26,9 @@ def to_document(obj: Any, /):
     return obj
 
 
-T = TypeVar("T", bound=Mongoclass)
-
-
-def from_document(cls: Type[T], /, data: Dict[str, Any]) -> T:
+def from_document(
+    cls: Type["DataclassInstance"], /, data: Dict[str, Any]
+) -> "DataclassInstance":
     """
     Attempts to create a dataclass instance from a dictionary.
     """
@@ -51,7 +53,7 @@ def from_document(cls: Type[T], /, data: Dict[str, Any]) -> T:
             non_init_values[field.name] = value
 
     obj = cls(**init_values)
-    for field, value in non_init_values.items():
-        setattr(obj, field, value)
+    for field_name, value in non_init_values.items():
+        setattr(obj, field_name, value)
 
     return obj
