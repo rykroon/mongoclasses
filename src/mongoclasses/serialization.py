@@ -1,12 +1,9 @@
 from collections.abc import Mapping
 from dataclasses import is_dataclass, fields
-from typing import Any, Dict, Type, TYPE_CHECKING
+from typing import Any, Dict, Type
 
-from .types import is_dataclass_instance, is_dataclass_type
-from .utils import get_field_name
-
-if TYPE_CHECKING:
-    from _typeshed import DataclassInstance
+from .types import DataclassInstance
+from .utils import get_field_name, is_dataclass_instance, is_dataclass_type
 
 
 def to_document(obj: Any, /) -> Any:
@@ -27,8 +24,8 @@ def to_document(obj: Any, /) -> Any:
 
 
 def from_document(
-    cls: Type["DataclassInstance"], /, data: Dict[str, Any]
-) -> "DataclassInstance":
+    cls: Type[DataclassInstance], /, data: Dict[str, Any]
+) -> DataclassInstance:
     """
     Attempts to create a dataclass instance from a dictionary.
     """

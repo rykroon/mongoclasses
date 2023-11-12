@@ -13,8 +13,7 @@ from .operations import (
     replace_one,
     update_one,
 )
-from .types import is_mongoclass
-from .utils import FieldInfo, get_id
+from .utils import FieldInfo, get_id, is_mongoclass
 
 __all__ = [
     "ainsert_one",

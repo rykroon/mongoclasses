@@ -1,19 +1,15 @@
-from typing import Any, Dict, List, Literal, Optional, Tuple, Type, TYPE_CHECKING, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Type, Union
 from typing_extensions import AsyncIterator, Iterator
 from pymongo.cursor import Cursor
 from pymongo.results import InsertOneResult, UpdateResult, DeleteResult
 from motor.motor_asyncio import AsyncIOMotorCursor
 
 from .serialization import to_document, from_document
-from .types import is_mongoclass, is_mongoclass_instance
-from .utils import get_id, set_id
+from .types import DataclassInstance, MongoclassInstance
+from .utils import get_id, set_id, is_mongoclass, is_mongoclass_instance
 
 
-if TYPE_CHECKING:
-    from .types import DataclassInstance, MongoclassInstance
-
-
-def insert_one(obj: "MongoclassInstance", /) -> InsertOneResult:
+def insert_one(obj: MongoclassInstance, /) -> InsertOneResult:
     """
     Inserts the object into the database.
 
@@ -35,7 +31,7 @@ def insert_one(obj: "MongoclassInstance", /) -> InsertOneResult:
     return result
 
 
-async def ainsert_one(obj: "MongoclassInstance", /) -> InsertOneResult:
+async def ainsert_one(obj: MongoclassInstance, /) -> InsertOneResult:
     if not is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
@@ -46,7 +42,7 @@ async def ainsert_one(obj: "MongoclassInstance", /) -> InsertOneResult:
     return result
 
 
-def update_one(obj: "MongoclassInstance", update: Dict[str, Any], /) -> UpdateResult:
+def update_one(obj: MongoclassInstance, update: Dict[str, Any], /) -> UpdateResult:
     """
     Updates the object in the database.
 
@@ -67,7 +63,7 @@ def update_one(obj: "MongoclassInstance", update: Dict[str, Any], /) -> UpdateRe
 
 
 async def aupdate_one(
-    obj: "MongoclassInstance", update: Dict[str, Any], /
+    obj: MongoclassInstance, update: Dict[str, Any], /
 ) -> UpdateResult:
     if not is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
@@ -79,7 +75,7 @@ async def aupdate_one(
     return result
 
 
-def replace_one(obj: "MongoclassInstance", /, upsert: bool = False) -> UpdateResult:
+def replace_one(obj: MongoclassInstance, /, upsert: bool = False) -> UpdateResult:
     """
     Replaces the object in the database.
 
@@ -103,7 +99,7 @@ def replace_one(obj: "MongoclassInstance", /, upsert: bool = False) -> UpdateRes
 
 
 async def areplace_one(
-    obj: "MongoclassInstance", /, upsert: bool = False
+    obj: MongoclassInstance, /, upsert: bool = False
 ) -> UpdateResult:
     if not is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
@@ -116,7 +112,7 @@ async def areplace_one(
     return result
 
 
-def delete_one(obj: "MongoclassInstance", /) -> DeleteResult:
+def delete_one(obj: MongoclassInstance, /) -> DeleteResult:
     """
     Deletes the object from the database.
 
@@ -135,7 +131,7 @@ def delete_one(obj: "MongoclassInstance", /) -> DeleteResult:
     return type(obj).collection.delete_one({"_id": get_id(obj)})
 
 
-async def adelete_one(obj: "MongoclassInstance", /) -> DeleteResult:
+async def adelete_one(obj: MongoclassInstance, /) -> DeleteResult:
     if not is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
@@ -145,8 +141,8 @@ async def adelete_one(obj: "MongoclassInstance", /) -> DeleteResult:
 
 
 def find_one(
-    cls: Type["MongoclassInstance"], /, filter: Optional[Any] = None
-) -> Optional["MongoclassInstance"]:
+    cls: Type[MongoclassInstance], /, filter: Optional[Any] = None
+) -> Optional[MongoclassInstance]:
     """
     Return a single instance that matches the query or None.
 
@@ -170,8 +166,8 @@ def find_one(
 
 
 async def afind_one(
-    cls: Type["MongoclassInstance"], /, filter: Optional[Dict[str, Any]] = None
-) -> Optional["MongoclassInstance"]:
+    cls: Type[MongoclassInstance], /, filter: Optional[Dict[str, Any]] = None
+) -> Optional[MongoclassInstance]:
     if not is_mongoclass(cls):
         raise TypeError("Not a mongoclass.")
 
@@ -182,7 +178,7 @@ async def afind_one(
 
 
 def find(
-    cls: Type["MongoclassInstance"],
+    cls: Type[MongoclassInstance],
     /,
     filter: Optional[Dict[str, Any]] = None,
     skip: int = 0,
@@ -213,13 +209,13 @@ def find(
     return cls.collection.find(filter=filter, skip=skip, limit=limit, sort=sort)
 
 
-def iter_objects(cls: Type["DataclassInstance"], cursor: Cursor) -> Iterator["DataclassInstance"]:
+def iter_objects(cls: Type[DataclassInstance], cursor: Cursor) -> Iterator[DataclassInstance]:
     for document in cursor:
         yield from_document(cls, document)
 
 
 async def aiter_objects(
-    cls: Type["DataclassInstance"], cursor: AsyncIOMotorCursor
-) -> AsyncIterator["DataclassInstance"]:
+    cls: Type[DataclassInstance], cursor: AsyncIOMotorCursor
+) -> AsyncIterator[DataclassInstance]:
     async for document in cursor:
         yield from_document(cls, document)
