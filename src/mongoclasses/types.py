@@ -1,21 +1,21 @@
-from dataclasses import fields, is_dataclass, Field, _DataclassParams, _FIELD_CLASSVAR
+from dataclasses import is_dataclass, Field, _DataclassParams, _FIELD_CLASSVAR
 import inspect
-from typing import Any, Protocol, Type, Union
+from typing import Any, ClassVar, Dict, Protocol, Type, Union
 from typing_extensions import TypeGuard
 
 from pymongo.collection import Collection
 from motor.motor_asyncio import AsyncIOMotorCollection
 
-from .utils import get_field_name
+from .utils import get_id_field
 
 
 class Dataclass(Protocol):
-    __dataclass_fields__: dict[str, Field]
+    __dataclass_fields__: Dict[str, Field]
     __dataclass_params__: _DataclassParams
 
 
 class Mongoclass(Dataclass):
-    collection: Union[Collection, AsyncIOMotorCollection]
+    collection: ClassVar[Union[Collection, AsyncIOMotorCollection]]
 
 
 def is_dataclass_type(obj: Any) -> TypeGuard[Type[Dataclass]]:
@@ -42,12 +42,12 @@ def is_mongoclass(obj: Any) -> TypeGuard[Union[Mongoclass, Type[Mongoclass]]]:
     if "_id" in obj.__dataclass_fields__:
         return True
 
-    for field in fields(obj):
-        field_name = get_field_name(field)
-        if field_name == "_id":
-            return True
-
-    return False
+    try:
+        get_id_field(obj)
+    except TypeError:
+        return False
+    else:
+        return True
 
 
 def is_mongoclass_type(obj: Any) -> TypeGuard[Type[Mongoclass]]:

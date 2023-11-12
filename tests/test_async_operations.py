@@ -3,8 +3,14 @@ from typing import ClassVar
 
 from bson import ObjectId
 import pytest
+import pytest_asyncio
 from mongoclasses import (
-    ainsert_one, afind_one, aupdate_one, adelete_one, areplace_one
+    adelete_one,
+    afind_one,
+    ainsert_one,
+    areplace_one,
+    aupdate_one,
+    get_id
 )
 
 
@@ -16,12 +22,16 @@ def client():
 
 @pytest.fixture
 def database(client):
-    client.drop_database("test_database")
     return client.test_database
 
 
+@pytest_asyncio.fixture(autouse=True)
+async def drop_collection(database):
+    await database.drop_collection("test_collection")
+
+
 @pytest.fixture
-def mongoclass(database):
+def Mongoclass(database):
     @dataclass
     class Foo:
         collection: ClassVar = database.test_collection
@@ -32,12 +42,11 @@ def mongoclass(database):
 
 
 @pytest.mark.asyncio
-async def test_insert_one(mongoclass):
-    obj = mongoclass()
+async def test_insert_one(Mongoclass):
+    obj = Mongoclass()
     await ainsert_one(obj)
 
-    assert obj._id is not None
-    assert await mongoclass.collection.find_one({"_id": obj._id}) is not None
+    assert await Mongoclass.collection.count_documents({"_id": obj._id}) == 1
 
 
 @pytest.mark.asyncio
@@ -47,11 +56,13 @@ async def test_insert_one_not_mongoclass():
 
 
 @pytest.mark.asyncio
-async def test_find_one(mongoclass):
-    obj = mongoclass()
+async def test_find_one(Mongoclass):
+    obj = Mongoclass()
     await ainsert_one(obj)
 
-    assert await afind_one(mongoclass, {"_id": obj._id}) == obj
+    result = await afind_one(Mongoclass, {"_id": obj._id})
+    assert result._id == obj._id
+    assert result.name == "foo"
 
 
 @pytest.mark.asyncio
@@ -61,11 +72,12 @@ async def test_find_one_not_mongoclass():
 
 
 @pytest.mark.asyncio
-async def test_update_one(mongoclass):
-    obj = mongoclass()
+async def test_update_one(Mongoclass):
+    obj = Mongoclass()
     await ainsert_one(obj)
     await aupdate_one(obj, {"$set": {"name": "bar"}})
-    result = await afind_one(mongoclass, {"_id": obj._id})
+
+    result = await afind_one(Mongoclass, {"_id": obj._id})
     assert result.name == "bar"
 
 
@@ -76,12 +88,12 @@ async def test_update_one_not_mongoclass():
 
 
 @pytest.mark.asyncio
-async def test_replace_one(mongoclass):
-    obj = mongoclass()
+async def test_replace_one(Mongoclass):
+    obj = Mongoclass()
     await ainsert_one(obj)
     obj.name = "bar"
     await areplace_one(obj)
-    result = await afind_one(mongoclass, {"_id": obj._id})
+    result = await afind_one(Mongoclass, {"_id": obj._id})
     assert result.name == "bar"
 
 
@@ -92,11 +104,11 @@ async def test_replace_one_not_mongoclass():
 
 
 @pytest.mark.asyncio
-async def test_delete_one(mongoclass):
-    obj = mongoclass()
+async def test_delete_one(Mongoclass):
+    obj = Mongoclass()
     await ainsert_one(obj)
     await adelete_one(obj)
-    assert await afind_one(mongoclass, {"_id": obj._id}) is None
+    assert await afind_one(Mongoclass, {"_id": obj._id}) is None
 
 
 @pytest.mark.asyncio

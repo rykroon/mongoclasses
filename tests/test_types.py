@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import Annotated, ClassVar
+from typing import ClassVar
+from typing_extensions import Annotated
 
 from mongoclasses import FieldInfo
 

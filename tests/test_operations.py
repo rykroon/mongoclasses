@@ -4,7 +4,13 @@ from typing import ClassVar
 from bson import ObjectId
 import pytest
 from mongoclasses import (
-    insert_one, find_one, find, update_one, delete_one, replace_one
+    insert_one,
+    iter_objects,
+    find_one,
+    find,
+    update_one,
+    delete_one,
+    replace_one,
 )
 
 

@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 import pytest
-from mongoclasses import to_document, from_document
+from mongoclasses.serialization import to_document, from_document
 
 
 def test_to_document_dataclass():
