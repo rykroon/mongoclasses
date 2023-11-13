@@ -110,3 +110,13 @@ def test_find_not_mongoclass():
     with pytest.raises(TypeError):
         find(object(), {"_id": ObjectId()})
 
+
+def test_iter_objects(mongoclass):
+    obj1 = mongoclass()
+    obj2 = mongoclass()
+    insert_one(obj1)
+    insert_one(obj2)
+    cursor = find(mongoclass, {})
+    for obj in iter_objects(mongoclass, cursor):
+        assert isinstance(obj, mongoclass)
+        assert obj._id in [obj1._id, obj2._id]

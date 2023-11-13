@@ -8,8 +8,10 @@ from mongoclasses import (
     adelete_one,
     afind_one,
     ainsert_one,
+    aiter_objects,
     areplace_one,
     aupdate_one,
+    find,
     get_id
 )
 
@@ -116,3 +118,16 @@ async def test_delete_one_not_mongoclass():
     with pytest.raises(TypeError):
         await adelete_one(object())
 
+
+@pytest.mark.asyncio
+async def test_aiter_objects(Mongoclass):
+    obj1 = Mongoclass()
+    obj2 = Mongoclass()
+    await ainsert_one(obj1)
+    await ainsert_one(obj2)
+
+    cursor = find(Mongoclass, {})
+
+    async for obj in aiter_objects(Mongoclass, cursor):
+        assert isinstance(obj, Mongoclass)
+        assert obj._id in [obj1._id, obj2._id]
