@@ -12,13 +12,14 @@ from mongoclasses import (
     areplace_one,
     aupdate_one,
     find,
-    get_id
+    get_id,
 )
 
 
 @pytest.fixture
 def client():
     from motor.motor_asyncio import AsyncIOMotorClient
+
     return AsyncIOMotorClient()
 
 

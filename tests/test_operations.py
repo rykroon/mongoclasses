@@ -17,7 +17,9 @@ from mongoclasses import (
 @pytest.fixture
 def client():
     from pymongo import MongoClient
+
     return MongoClient()
+
 
 @pytest.fixture
 def database(client):

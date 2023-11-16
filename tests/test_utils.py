@@ -1,6 +1,6 @@
 from dataclasses import dataclass, fields
 from typing import ClassVar, List, Optional
-from typing_extensions import Annotated # Introduced in Python 3.9
+from typing_extensions import Annotated  # Introduced in Python 3.9
 
 import pytest
 
@@ -16,17 +16,16 @@ from mongoclasses.utils import (
     is_dataclass_type,
     is_mongoclass,
     is_mongoclass_instance,
-    is_mongoclass_type
+    is_mongoclass_type,
 )
 
 
 def test_get_field_info():
     @dataclass
     class Foo:
-        bar: str # no annotation
-        baz: Annotated[int, FieldInfo(db_field="baz")] # annotated with FieldInfo
-        qux: Annotated[int, ...] # annotated without FieldInfo
-
+        bar: str  # no annotation
+        baz: Annotated[int, FieldInfo(db_field="baz")]  # annotated with FieldInfo
+        qux: Annotated[int, ...]  # annotated without FieldInfo
 
     assert get_field_info(fields(Foo)[0]) is None
     assert get_field_info(fields(Foo)[1]) == FieldInfo(db_field="baz")
@@ -36,10 +35,9 @@ def test_get_field_info():
 def test_get_field_name():
     @dataclass
     class Foo:
-        bar: str # no annotation
-        baz: Annotated[int, FieldInfo(db_field="bazzz")] # annotated with FieldInfo
-        qux: Annotated[int, ...] # annotated without FieldInfo
-
+        bar: str  # no annotation
+        baz: Annotated[int, FieldInfo(db_field="bazzz")]  # annotated with FieldInfo
+        qux: Annotated[int, ...]  # annotated without FieldInfo
 
     assert get_field_name(fields(Foo)[0]) == "bar"
     assert get_field_name(fields(Foo)[1]) == "bazzz"
@@ -52,7 +50,6 @@ def test_get_id_field():
         bar: Annotated[int, FieldInfo(db_field="_id")]
         baz: str
 
-
     assert get_id_field(Foo) == fields(Foo)[0]
 
 
@@ -61,7 +58,6 @@ def test_get_id_field_no_id():
     class Foo:
         bar: str
         baz: str
-
 
     with pytest.raises(TypeError):
         get_id_field(Foo)
@@ -73,7 +69,6 @@ def test_get_id():
         bar: Annotated[int, FieldInfo(db_field="_id")]
         baz: str
 
-
     foo = Foo(1, "baz")
     assert get_id(foo) == 1
 
@@ -84,7 +79,6 @@ def test_set_id():
         bar: Annotated[int, FieldInfo(db_field="_id")]
         baz: str
 
-
     foo = Foo(1, "baz")
     set_id(foo, 2)
     assert get_id(foo) == 2
@@ -92,10 +86,9 @@ def test_set_id():
 
 def test_resolve_type():
     assert resolve_type(int) == int
-    assert resolve_type(Annotated[int, ...]) == int # test for Annotated types
-    assert resolve_type(Optional[int]) == (int, type(None)) # test for Union types
+    assert resolve_type(Annotated[int, ...]) == int  # test for Annotated types
+    assert resolve_type(Optional[int]) == (int, type(None))  # test for Union types
     assert resolve_type(List[str]) == list
-
 
 
 def test_is_dataclass_not_a_dataclass():
@@ -110,7 +103,6 @@ def test_is_dataclass():
     @dataclass
     class Dataclass:
         pass
-
 
     assert is_dataclass_type(Dataclass)
     assert not is_dataclass_type(Dataclass())
