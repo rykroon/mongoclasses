@@ -39,10 +39,6 @@ nav:
   - API Reference:
     - Mongoclass Functions: api/mongoclasses.md
     - Collection Methods: api/sync_methods.md
-    - Update Operators:
-      - Field Operators: api/operators/update/field.md
-      - Array Operators: api/operators/update/array.md
-      - Bit Operators: api/operators/update/bit.md
 
 
 markdown_extensions:
