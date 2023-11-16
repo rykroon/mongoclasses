@@ -1,53 +1,35 @@
 from dataclasses import dataclass, field
 import pytest
+from typing import List, Dict
 from mongoclasses.serialization import to_document, from_document
 
 
-def test_to_document_dataclass():
+def test_to_document():
     @dataclass
-    class Foo:
-        bar: str
-        baz: int
-
-    foo = Foo("bar", 1)
-    assert to_document(foo) == {"bar": "bar", "baz": 1}
-
-
-def test_to_document_nested_dataclass():
-    @dataclass
-    class Foo:
-        bar: str
-        baz: int
+    class Inner:
+        value: int
 
     @dataclass
-    class Bar:
-        foo: Foo
+    class Outer:
+        foo: Inner
+        bar: List[Inner]
+        baz: Dict[str, Inner]
 
-    bar = Bar(Foo("bar", 1))
-    assert to_document(bar) == {"foo": {"bar": "bar", "baz": 1}}
-
-
-def test_to_document_list_of_dataclasses():
-    @dataclass
-    class Foo:
-        bar: str
-        baz: int
-
-    foo = Foo("bar", 1)
-    assert to_document([foo, foo]) == [
-        {"bar": "bar", "baz": 1},
-        {"bar": "bar", "baz": 1},
-    ]
+    obj = Outer(
+        foo=Inner(1),
+        bar=[Inner(2), Inner(3)],
+        baz={"k1": Inner(4), "k2": Inner(5)},
+    )
+    assert to_document(obj) == {
+        "foo": {"value": 1},
+        "bar": [{"value": 2}, {"value": 3}],
+        "baz": {"k1": {"value": 4}, "k2": {"value": 5}},
+    }
 
 
-def test_to_document_dict_of_dataclasses():
-    @dataclass
-    class Foo:
-        bar: str
-        baz: int
-
-    foo = Foo("bar", 1)
-    assert to_document({"foo": foo}) == {"foo": {"bar": "bar", "baz": 1}}
+def test_to_document_not_a_dataclass_instance():
+    with pytest.raises(TypeError):
+        to_document("foo")
 
 
 def test_from_document_not_a_class():
@@ -91,9 +73,7 @@ def test_from_document_nested_dataclass():
     class Bar:
         foo: Foo
 
-    assert from_document(Bar, {"foo": {"bar": "bar", "baz": 1}}) == Bar(
-        Foo("bar", 1)
-    )
+    assert from_document(Bar, {"foo": {"bar": "bar", "baz": 1}}) == Bar(Foo("bar", 1))
 
 
 def test_from_document_non_init_field():

@@ -6,19 +6,29 @@ from .types import DataclassInstance
 from .utils import get_field_name, is_dataclass_instance, is_dataclass_type
 
 
-def to_document(obj: Any, /) -> Any:
+def to_document(obj: DataclassInstance, /) -> Dict[str, Any]:
+    """
+    Converts a dataclass instance to a dictionary.
+    """
+    if not is_dataclass_instance(obj):
+        raise TypeError("Object must be a dataclass instance.")
+
+    field_names = (get_field_name(field) for field in fields(obj))
+    return {
+        field_name: _to_document_helper(getattr(obj, field_name))
+        for field_name in field_names
+    }
+
+
+def _to_document_helper(obj: Any, /) -> Any:
     if is_dataclass_instance(obj):
-        field_names = (get_field_name(field) for field in fields(obj))
-        return {
-            field_name: to_document(getattr(obj, field_name))
-            for field_name in field_names
-        }
+        return to_document(obj)
 
     if isinstance(obj, (list, tuple, set)):
-        return [to_document(item) for item in obj]
+        return [_to_document_helper(item) for item in obj]
 
     if isinstance(obj, Mapping):
-        return {k: to_document(v) for k, v in obj.items()}
+        return {k: _to_document_helper(v) for k, v in obj.items()}
 
     return obj
 
