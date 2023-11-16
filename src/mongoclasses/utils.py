@@ -91,7 +91,7 @@ def is_dataclass_instance(obj: Any) -> TypeGuard[DataclassInstance]:
 
 def is_mongoclass(
     obj: Any,
-) -> TypeGuard[Union["MongoclassInstance", Type["MongoclassInstance"]]]:
+) -> TypeGuard[Union[MongoclassInstance, Type[MongoclassInstance]]]:
     if not is_dataclass(obj):
         return False
 
@@ -112,12 +112,12 @@ def is_mongoclass(
         return True
 
 
-def is_mongoclass_type(obj: Any) -> TypeGuard[Type["MongoclassInstance"]]:
+def is_mongoclass_type(obj: Any) -> TypeGuard[Type[MongoclassInstance]]:
     if not is_mongoclass(obj):
         return False
 
     return inspect.isclass(obj)
 
 
-def is_mongoclass_instance(obj: Any) -> TypeGuard["MongoclassInstance"]:
+def is_mongoclass_instance(obj: Any) -> TypeGuard[MongoclassInstance]:
     return is_mongoclass_type(type(obj))

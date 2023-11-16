@@ -1,12 +1,15 @@
-from typing import Any, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Type, TypeVar, Union
 from typing_extensions import AsyncIterator, Iterator
 from pymongo.cursor import Cursor
 from pymongo.results import InsertOneResult, UpdateResult, DeleteResult
 from motor.motor_asyncio import AsyncIOMotorCursor
 
 from .serialization import to_document, from_document
-from .types import DataclassInstance, MongoclassInstance
+from .types import MongoclassInstance
 from .utils import get_id, set_id, is_mongoclass, is_mongoclass_instance
+
+
+T = TypeVar("T", bound=MongoclassInstance)
 
 
 def insert_one(obj: MongoclassInstance, /) -> InsertOneResult:
@@ -140,9 +143,7 @@ async def adelete_one(obj: MongoclassInstance, /) -> DeleteResult:
     return result
 
 
-def find_one(
-    cls: Type[MongoclassInstance], /, filter: Optional[Any] = None
-) -> Optional[MongoclassInstance]:
+def find_one(cls: Type[T], /, filter: Optional[Any] = None) -> Optional[T]:
     """
     Return a single instance that matches the query or None.
 
@@ -209,13 +210,11 @@ def find(
     return cls.collection.find(filter=filter, skip=skip, limit=limit, sort=sort)
 
 
-def iter_objects(cls: Type[DataclassInstance], cursor: Cursor) -> Iterator[DataclassInstance]:
+def iter_objects(cls: Type[T], cursor: Cursor) -> Iterator[T]:
     for document in cursor:
         yield from_document(cls, document)
 
 
-async def aiter_objects(
-    cls: Type[DataclassInstance], cursor: AsyncIOMotorCursor
-) -> AsyncIterator[DataclassInstance]:
+async def aiter_objects(cls: Type[T], cursor: AsyncIOMotorCursor) -> AsyncIterator[T]:
     async for document in cursor:
         yield from_document(cls, document)
