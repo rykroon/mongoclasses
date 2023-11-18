@@ -1,13 +1,13 @@
 from dataclasses import Field
-from typing import Any, ClassVar, Dict, Protocol, Union
+from typing import Any, ClassVar, Protocol
 
 from pymongo.collection import Collection
 from motor.motor_asyncio import AsyncIOMotorCollection
 
 
 class DataclassInstance(Protocol):
-    __dataclass_fields__: ClassVar[Dict[str, Field]]
+    __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
 
 
 class MongoclassInstance(DataclassInstance):
-    collection: ClassVar[Union[Collection, AsyncIOMotorCollection]]
+    collection: ClassVar[Collection[Any] | AsyncIOMotorCollection]

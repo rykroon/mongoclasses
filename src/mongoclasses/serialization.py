@@ -1,15 +1,10 @@
 from collections.abc import Mapping
 from dataclasses import is_dataclass, fields
-from typing import Any, Dict, Type, TypeVar
 
-from .types import DataclassInstance
 from .utils import get_field_name, is_dataclass_instance, is_dataclass_type
 
 
-T = TypeVar("T", bound=DataclassInstance)
-
-
-def to_document(obj: DataclassInstance, /) -> Dict[str, Any]:
+def to_document(obj, /):
     """
     Converts a dataclass instance to a dictionary.
     """
@@ -23,7 +18,7 @@ def to_document(obj: DataclassInstance, /) -> Dict[str, Any]:
     }
 
 
-def _to_document_helper(obj: Any, /) -> Any:
+def _to_document_helper(obj, /):
     if is_dataclass_instance(obj):
         return to_document(obj)
 
@@ -36,7 +31,7 @@ def _to_document_helper(obj: Any, /) -> Any:
     return obj
 
 
-def from_document(cls: Type[T], /, data: Dict[str, Any]) -> T:
+def from_document(cls, /, data):
     """
     Attempts to create a dataclass instance from a dictionary.
     """
