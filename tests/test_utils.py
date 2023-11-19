@@ -1,5 +1,5 @@
 from dataclasses import dataclass, fields
-from typing import ClassVar, List, Optional
+from typing import ClassVar
 from typing_extensions import Annotated  # Introduced in Python 3.9
 
 import pytest
@@ -7,11 +7,10 @@ import pytest
 from mongoclasses.utils import (
     get_id,
     get_id_field,
-    get_field_info,
+    get_field_meta,
     get_field_name,
     set_id,
-    resolve_type,
-    FieldInfo,
+    FieldMeta,
     is_dataclass_instance,
     is_dataclass_type,
     is_mongoclass,
@@ -20,24 +19,24 @@ from mongoclasses.utils import (
 )
 
 
-def test_get_field_info():
+def test_get_field_meta():
     @dataclass
     class Foo:
         bar: str  # no annotation
-        baz: Annotated[int, FieldInfo(db_field="baz")]  # annotated with FieldInfo
-        qux: Annotated[int, ...]  # annotated without FieldInfo
+        baz: Annotated[int, FieldMeta(db_field="baz")]  # annotated with FieldMeta
+        qux: Annotated[int, ...]  # annotated without FieldMeta
 
-    assert get_field_info(fields(Foo)[0]) is None
-    assert get_field_info(fields(Foo)[1]) == FieldInfo(db_field="baz")
-    assert get_field_info(fields(Foo)[2]) is None
+    assert get_field_meta(fields(Foo)[0]) is None
+    assert get_field_meta(fields(Foo)[1]) == FieldMeta(db_field="baz")
+    assert get_field_meta(fields(Foo)[2]) is None
 
 
 def test_get_field_name():
     @dataclass
     class Foo:
         bar: str  # no annotation
-        baz: Annotated[int, FieldInfo(db_field="bazzz")]  # annotated with FieldInfo
-        qux: Annotated[int, ...]  # annotated without FieldInfo
+        baz: Annotated[int, FieldMeta(db_field="bazzz")]  # annotated with FieldMeta
+        qux: Annotated[int, ...]  # annotated without FieldMeta
 
     assert get_field_name(fields(Foo)[0]) == "bar"
     assert get_field_name(fields(Foo)[1]) == "bazzz"
@@ -47,7 +46,7 @@ def test_get_field_name():
 def test_get_id_field():
     @dataclass
     class Foo:
-        bar: Annotated[int, FieldInfo(db_field="_id")]
+        bar: Annotated[int, FieldMeta(db_field="_id")]
         baz: str
 
     assert get_id_field(Foo) == fields(Foo)[0]
@@ -66,7 +65,7 @@ def test_get_id_field_no_id():
 def test_get_id():
     @dataclass
     class Foo:
-        bar: Annotated[int, FieldInfo(db_field="_id")]
+        bar: Annotated[int, FieldMeta(db_field="_id")]
         baz: str
 
     foo = Foo(1, "baz")
@@ -76,19 +75,12 @@ def test_get_id():
 def test_set_id():
     @dataclass
     class Foo:
-        bar: Annotated[int, FieldInfo(db_field="_id")]
+        bar: Annotated[int, FieldMeta(db_field="_id")]
         baz: str
 
     foo = Foo(1, "baz")
     set_id(foo, 2)
     assert get_id(foo) == 2
-
-
-def test_resolve_type():
-    assert resolve_type(int) == int
-    assert resolve_type(Annotated[int, ...]) == int  # test for Annotated types
-    assert resolve_type(Optional[int]) == (int, type(None))  # test for Union types
-    assert resolve_type(List[str]) == list
 
 
 def test_is_dataclass_not_a_dataclass():
@@ -166,7 +158,7 @@ def test_is_mongoclass_annotated_id():
     @dataclass
     class Mongoclass:
         collection: ClassVar[str]
-        id: Annotated[str, FieldInfo(db_field="_id")] = ""
+        id: Annotated[str, FieldMeta(db_field="_id")] = ""
 
     assert is_mongoclass(Mongoclass)
     assert is_mongoclass(Mongoclass())
