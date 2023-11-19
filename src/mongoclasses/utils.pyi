@@ -5,11 +5,11 @@ from typing_extensions import TypeGuard
 from .types import DataclassInstance, MongoclassInstance
 
 @dataclass(frozen=True)
-class FieldInfo:
+class FieldMeta:
     db_field: str | None = None
     unique: bool = False
 
-def get_field_info(field: Field[Any]) -> FieldInfo | None:
+def get_field_meta(field: Field[Any]) -> FieldMeta | None:
     pass
 
 def get_field_name(field: Field[Any]) -> str:
@@ -22,12 +22,6 @@ def set_id(obj: MongoclassInstance, id: Any) -> None:
     pass
 
 def get_id(obj: MongoclassInstance) -> Any:
-    pass
-
-def resolve_type(t: type) -> type | list[type]:
-    pass
-
-def is_union(t: type) -> bool:
     pass
 
 def is_dataclass_type(obj: Any) -> TypeGuard[type[DataclassInstance]]:

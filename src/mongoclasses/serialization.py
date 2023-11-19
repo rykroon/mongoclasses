@@ -1,5 +1,7 @@
 from collections.abc import Mapping
 from dataclasses import is_dataclass, fields
+from typing import Union
+from typing_extensions import get_args, get_origin, Annotated
 
 from .utils import get_field_name, is_dataclass_instance, is_dataclass_type
 
@@ -13,22 +15,22 @@ def to_document(obj, /):
 
     field_names = (get_field_name(field) for field in fields(obj))
     return {
-        field_name: _to_document_helper(getattr(obj, field_name))
+        field_name: _to_document_inner(getattr(obj, field_name))
         for field_name in field_names
     }
 
 
-def _to_document_helper(obj, /):
-    if is_dataclass_instance(obj):
-        return to_document(obj)
+def _to_document_inner(value, /):
+    if is_dataclass_instance(value):
+        return to_document(value)
 
-    if isinstance(obj, (list, tuple, set)):
-        return [_to_document_helper(item) for item in obj]
+    if isinstance(value, (list, tuple)):
+        return [_to_document_inner(item) for item in value]
 
-    if isinstance(obj, Mapping):
-        return {k: _to_document_helper(v) for k, v in obj.items()}
+    if isinstance(value, Mapping):
+        return {k: _to_document_inner(v) for k, v in value.items()}
 
-    return obj
+    return value
 
 
 def from_document(cls, /, data):
@@ -60,3 +62,31 @@ def from_document(cls, /, data):
         setattr(obj, field_name, value)
 
     return obj
+
+
+def resolve_type(t):
+    origin = get_origin(t)
+    if origin is None:
+        return t
+
+    if origin is Annotated:
+        return resolve_type(get_args(t)[0])
+
+    if is_union(t):
+        return tuple([resolve_type(arg) for arg in get_args(t)])
+
+    return origin
+
+
+def is_union(t):
+    if get_origin(t) is Union:
+        return True
+
+    try:
+        # UnionType was introduced in python 3.10
+        from types import UnionType
+
+        return isinstance(t, UnionType)
+
+    except ImportError:
+        return False

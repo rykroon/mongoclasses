@@ -1,79 +1,50 @@
 from dataclasses import dataclass, fields, is_dataclass, _FIELD_CLASSVAR
 import inspect
-from typing import Any, Optional, Union
-from typing_extensions import get_args, get_origin, Annotated
+from typing import Optional
+from typing_extensions import get_origin, Annotated
 
 
 @dataclass(frozen=True)
-class FieldInfo:
+class FieldMeta:
     db_field: Optional[str] = None
     unique: bool = False
-    # db_index: bool = False
-    # required: bool = False
 
 
-def get_field_info(field):
+def get_field_meta(field):
     if get_origin(field.type) is not Annotated:
         return None
 
     for annotation in field.type.__metadata__:
-        if isinstance(annotation, FieldInfo):
+        if isinstance(annotation, FieldMeta):
             return annotation
 
     return None
 
 
 def get_field_name(field):
-    field_info = get_field_info(field)
-    if field_info is None or field_info.db_field is None:
-        return field.name
+    field_meta = get_field_meta(field)
 
-    return field_info.db_field
+    if field_meta is not None and field_meta.db_field is not None:
+        return field_meta.db_field
+
+    return field.name
 
 
-def get_id_field(cls):
+def get_id_field(cls, /):
     for field in fields(cls):
         if get_field_name(field) == "_id":
             return field
     raise TypeError(f"Object {cls} has no _id field")
 
 
-def set_id(obj, id):
+def set_id(obj, /, id):
     field = get_id_field(type(obj))
     setattr(obj, field.name, id)
 
 
-def get_id(obj) -> Any:
+def get_id(obj, /):
     field = get_id_field(type(obj))
     return getattr(obj, field.name)
-
-
-def resolve_type(t):
-    origin = get_origin(t)
-    if origin is None:
-        return t
-
-    if origin is Annotated:
-        return resolve_type(get_args(t)[0])
-
-    if is_union(t):
-        return tuple([resolve_type(arg) for arg in get_args(t)])
-
-    return origin
-
-
-def is_union(t):
-    if get_origin(t) is Union:
-        return True
-
-    try:
-        # UnionType was introduced in python 3.10
-        from types import UnionType
-
-        return isinstance(t, UnionType)
-
-    except ImportError:
-        return False
 
 
 def is_dataclass_type(obj, /):
