@@ -36,6 +36,8 @@ async def ainsert_one(obj, /):
     set_id(obj, result.inserted_id)
     return result
 
+ainsert_one.__doc__ = insert_one.__doc__
+
 
 def update_one(obj, update, /):
     """
@@ -66,6 +68,8 @@ async def aupdate_one(obj, update, /):
     )
     assert isinstance(result, UpdateResult)
     return result
+
+aupdate_one.__doc__ = update_one.__doc__
 
 
 def replace_one(obj, /, upsert=False):
@@ -102,6 +106,8 @@ async def areplace_one(obj, /, upsert=False):
     assert isinstance(result, UpdateResult)
     return result
 
+areplace_one.__doc__ = replace_one.__doc__
+
 
 def delete_one(obj, /):
     """
@@ -129,6 +135,8 @@ async def adelete_one(obj, /):
     result = await type(obj).collection.delete_one({"_id": get_id(obj)})
     assert isinstance(result, DeleteResult)
     return result
+
+adelete_one.__doc__ = delete_one.__doc__
 
 
 def find_one(cls, /, filter=None):
@@ -162,6 +170,8 @@ async def afind_one(cls, /, filter=None):
     if document is None:
         return None
     return from_document(cls, document)
+
+afind_one.__doc__ = find_one.__doc__
 
 
 def find(cls, /, filter=None, skip=0, limit=0, sort=None):
