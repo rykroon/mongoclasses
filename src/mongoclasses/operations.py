@@ -1,7 +1,10 @@
+from pymongo import IndexModel
 from pymongo.results import InsertOneResult, UpdateResult, DeleteResult
 
 from .serialization import to_document, from_document
-from .utils import get_id, set_id, is_mongoclass, is_mongoclass_instance
+from .utils import (
+    get_id, set_id, is_mongoclass, is_mongoclass_instance, 
+)
 
 
 def insert_one(obj, /):
@@ -207,3 +210,19 @@ def iter_objects(cls, cursor):
 async def aiter_objects(cls, cursor):
     async for document in cursor:
         yield from_document(cls, document)
+
+
+def create_indexes(cls, /):
+    """
+    Creates the indexes specified by the mongoclass.
+
+    Parameters:
+        cls: A mongoclass.
+
+    Raises:
+        TypeError: If the class is not a mongoclass.
+    """
+    if not is_mongoclass(cls):
+        raise TypeError("Not a mongoclass.")
+
+    pass
