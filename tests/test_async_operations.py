@@ -12,7 +12,7 @@ from mongoclasses import (
     areplace_one,
     aupdate_one,
     find,
-    get_id,
+    mongoclass,
 )
 
 
@@ -35,9 +35,9 @@ async def drop_collection(database):
 
 @pytest.fixture
 def Mongoclass(database):
+    @mongoclass(db=database, collection_name="test_collection")
     @dataclass
     class Foo:
-        collection: ClassVar = database.test_collection
         _id: ObjectId = field(default_factory=ObjectId)
         name: str = "foo"
 
@@ -49,7 +49,8 @@ async def test_insert_one(Mongoclass):
     obj = Mongoclass()
     await ainsert_one(obj)
 
-    assert await Mongoclass.collection.count_documents({"_id": obj._id}) == 1
+    collection = Mongoclass.__mongoclass_config__.collection
+    assert await collection.count_documents({"_id": obj._id}) == 1
 
 
 @pytest.mark.asyncio

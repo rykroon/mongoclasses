@@ -3,14 +3,14 @@ from dataclasses import is_dataclass, fields
 from typing import Union
 from typing_extensions import get_args, get_origin, Annotated
 
-from .utils import get_field_name, is_dataclass_instance, is_dataclass_type
+from .utils import get_field_name
 
 
 def to_document(obj, /):
     """
     Converts a dataclass instance to a dictionary.
     """
-    if not is_dataclass_instance(obj):
+    if not is_dataclass(obj):
         raise TypeError("Object must be a dataclass instance.")
 
     field_names = (get_field_name(field) for field in fields(obj))
@@ -21,7 +21,7 @@ def to_document(obj, /):
 
 
 def _to_document_inner(value, /):
-    if is_dataclass_instance(value):
+    if is_dataclass(value):
         return to_document(value)
 
     if isinstance(value, (list, tuple)):
@@ -37,7 +37,7 @@ def from_document(cls, /, data):
     """
     Attempts to create a dataclass instance from a dictionary.
     """
-    if not is_dataclass_type(cls):
+    if not is_dataclass(cls):
         raise TypeError("Object must be a dataclass type.")
 
     init_values = {}

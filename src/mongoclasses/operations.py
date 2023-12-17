@@ -1,13 +1,23 @@
+from typing import Any, Literal, Optional, Type, TypeVar
+
 from pymongo import IndexModel
 from pymongo.results import InsertOneResult, UpdateResult, DeleteResult
 
 from .serialization import to_document, from_document
 from .utils import (
-    get_id, set_id, is_mongoclass, is_mongoclass_instance, 
+    get_collection,
+    get_id,
+    set_id,
+    is_mongoclass,
+    _is_mongoclass_instance,
 )
+from .types import MongoclassInstance
 
 
-def insert_one(obj, /):
+T = TypeVar("T", bound=MongoclassInstance)
+
+
+def insert_one(obj: T, /) -> InsertOneResult:
     """
     Inserts the object into the database.
 
@@ -20,29 +30,32 @@ def insert_one(obj, /):
     Returns:
         A pymongo `InsertOneResult` object.
     """
-    if not is_mongoclass_instance(obj):
+    if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
     document = to_document(obj)
-    result = type(obj).collection.insert_one(document)
+    collection = get_collection(obj)
+    result = collection.insert_one(document)
     set_id(obj, result.inserted_id)
     return result
 
 
-async def ainsert_one(obj, /):
-    if not is_mongoclass_instance(obj):
+async def ainsert_one(obj: T, /) -> InsertOneResult:
+    if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
     document = to_document(obj)
-    result = await type(obj).collection.insert_one(document)
+    collection = get_collection(obj)
+    result = await collection.insert_one(document)
     assert isinstance(result, InsertOneResult)
     set_id(obj, result.inserted_id)
     return result
 
+
 ainsert_one.__doc__ = insert_one.__doc__
 
 
-def update_one(obj, update, /):
+def update_one(obj: T, update: dict[str, Any], /) -> UpdateResult:
     """
     Updates the object in the database.
 
@@ -56,26 +69,29 @@ def update_one(obj, update, /):
     Returns:
         A pymongo `UpdateResult` object.
     """
-    if not is_mongoclass_instance(obj):
+    if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
-    return type(obj).collection.update_one(filter={"_id": get_id(obj)}, update=update)
+    collection = get_collection(obj)
+    return collection.update_one(filter={"_id": get_id(obj)}, update=update)
 
 
-async def aupdate_one(obj, update, /):
-    if not is_mongoclass_instance(obj):
+async def aupdate_one(obj: T, update: dict[str, Any], /) -> UpdateResult:
+    if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
-    result = await type(obj).collection.update_one(
+    collection = get_collection(obj)
+    result = await collection.update_one(
         filter={"_id": get_id(obj)}, update=update
     )
     assert isinstance(result, UpdateResult)
     return result
 
+
 aupdate_one.__doc__ = update_one.__doc__
 
 
-def replace_one(obj, /, upsert=False):
+def replace_one(obj: T, /, upsert: bool = False) -> UpdateResult:
     """
     Replaces the object in the database.
 
@@ -89,30 +105,33 @@ def replace_one(obj, /, upsert=False):
     Returns:
         A pymongo `UpdateResult` object.
     """
-    if not is_mongoclass_instance(obj):
+    if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
     document = to_document(obj)
-    return type(obj).collection.replace_one(
+    collection = get_collection(obj)
+    return collection.replace_one(
         filter={"_id": get_id(obj)}, replacement=document, upsert=upsert
     )
 
 
-async def areplace_one(obj, /, upsert=False):
-    if not is_mongoclass_instance(obj):
+async def areplace_one(obj: T, /, upsert: bool = False) -> UpdateResult:
+    if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
     document = to_document(obj)
-    result = await type(obj).collection.replace_one(
+    collection = get_collection(obj)
+    result = await collection.replace_one(
         filter={"_id": get_id(obj)}, replacement=document, upsert=upsert
     )
     assert isinstance(result, UpdateResult)
     return result
 
+
 areplace_one.__doc__ = replace_one.__doc__
 
 
-def delete_one(obj, /):
+def delete_one(obj: T, /) -> DeleteResult:
     """
     Deletes the object from the database.
 
@@ -125,24 +144,27 @@ def delete_one(obj, /):
     Returns:
         A pymongo `DeleteResult` object.
     """
-    if not is_mongoclass_instance(obj):
+    if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
-    return type(obj).collection.delete_one({"_id": get_id(obj)})
+    collection = get_collection(obj)
+    return collection.delete_one({"_id": get_id(obj)})
 
 
-async def adelete_one(obj, /):
-    if not is_mongoclass_instance(obj):
+async def adelete_one(obj: T, /) -> DeleteResult:
+    if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
-    result = await type(obj).collection.delete_one({"_id": get_id(obj)})
+    collection = get_collection(obj)
+    result = await collection.delete_one({"_id": get_id(obj)})
     assert isinstance(result, DeleteResult)
     return result
+
 
 adelete_one.__doc__ = delete_one.__doc__
 
 
-def find_one(cls, /, filter=None):
+def find_one(cls: Type[T], /, filter: Optional[dict[str, Any]] = None) -> T | None:
     """
     Return a single instance that matches the query or None.
 
@@ -159,25 +181,37 @@ def find_one(cls, /, filter=None):
     if not is_mongoclass(cls):
         raise TypeError("Not a mongoclass.")
 
-    document = cls.collection.find_one(filter=filter)
+    collection = get_collection(cls)
+    document = collection.find_one(filter=filter)
     if document is None:
         return None
     return from_document(cls, document)
 
 
-async def afind_one(cls, /, filter=None):
+async def afind_one(
+    cls: Type[T], /, filter: Optional[dict[str, Any]] = None
+) -> T | None:
     if not is_mongoclass(cls):
         raise TypeError("Not a mongoclass.")
 
-    document = await cls.collection.find_one(filter=filter)
+    collection = get_collection(cls)
+    document = await collection.find_one(filter=filter)
     if document is None:
         return None
     return from_document(cls, document)
+
 
 afind_one.__doc__ = find_one.__doc__
 
 
-def find(cls, /, filter=None, skip=0, limit=0, sort=None):
+def find(
+    cls: Type[T],
+    /,
+    filter: Optional[dict[str, Any]] = None,
+    skip: int = 0,
+    limit: int = 0,
+    sort: Optional[list[tuple[str, Literal[-1, 1]]]] = None,
+):
     """
     Performs a query on the mongoclass.
 
@@ -199,20 +233,21 @@ def find(cls, /, filter=None, skip=0, limit=0, sort=None):
     if not is_mongoclass(cls):
         raise TypeError("Not a mongoclass.")
 
-    return cls.collection.find(filter=filter, skip=skip, limit=limit, sort=sort)
+    collection = get_collection(cls)
+    return collection.find(filter=filter, skip=skip, limit=limit, sort=sort)
 
 
-def iter_objects(cls, cursor):
+def iter_objects(cls: Type[T], cursor):
     for document in cursor:
         yield from_document(cls, document)
 
 
-async def aiter_objects(cls, cursor):
+async def aiter_objects(cls: Type[T], cursor):
     async for document in cursor:
         yield from_document(cls, document)
 
 
-def create_indexes(cls, /):
+def create_indexes(cls: Type[T], /):
     """
     Creates the indexes specified by the mongoclass.
 

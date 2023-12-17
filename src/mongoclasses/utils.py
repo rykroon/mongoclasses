@@ -1,7 +1,19 @@
-from dataclasses import dataclass, fields, is_dataclass, _FIELD_CLASSVAR
-import inspect
-from typing import Optional
-from typing_extensions import get_origin, Annotated
+
+from dataclasses import dataclass, fields, is_dataclass, Field
+from typing import Any, Optional, Union
+from typing_extensions import Annotated, get_origin
+
+from pymongo import IndexModel
+from pymongo.collection import Collection
+from pymongo.database import Database
+from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
+
+
+@dataclass(frozen=True)
+class MongoClassConfig:
+    collection: Union[Collection, AsyncIOMotorCollection]
+    id_field: Field
+    indexes: list[IndexModel]
 
 
 @dataclass(frozen=True)
@@ -10,7 +22,58 @@ class FieldMeta:
     unique: bool = False
 
 
-def get_field_meta(field):
+def mongoclass(
+    *,
+    db: Union[Database, AsyncIOMotorDatabase],
+    collection_name: Optional[str] = None,
+    indexes: Optional[list[IndexModel]] = None,
+):
+    if indexes is None:
+        indexes = []
+
+    def decorator(cls):
+        return _process_class(cls, db, collection_name, indexes)
+
+    return decorator
+
+
+def _process_class(cls, db, collection_name, indexes):
+    if not is_dataclass(cls):
+        raise TypeError(f"Class {cls} is not a dataclass")
+
+    if collection_name is None:
+        collection_name = cls.__name__.lower()
+    collection = db[collection_name]
+
+    id_field = None
+    for field in fields(cls):
+        if get_field_name(field) == "_id":
+            id_field = field
+
+        # Check for indexes
+
+    if id_field is None:
+        raise TypeError(f"Class {cls} has no _id field")
+
+    config = MongoClassConfig(
+        collection=collection,
+        id_field=id_field,
+        indexes=indexes,
+    )
+    setattr(cls, "__mongoclass_config__", config)
+    return cls
+
+
+def get_field_name(field: Field) -> str:
+    field_meta = get_field_meta(field)
+
+    if field_meta is not None and field_meta.db_field is not None:
+        return field_meta.db_field
+
+    return field.name
+
+
+def get_field_meta(field: Field) -> Optional[FieldMeta]:
     if get_origin(field.type) is not Annotated:
         return None
 
@@ -21,70 +84,25 @@ def get_field_meta(field):
     return None
 
 
-def get_field_name(field):
-    field_meta = get_field_meta(field)
-
-    if field_meta is not None and field_meta.db_field is not None:
-        return field_meta.db_field
-
-    return field.name
+def get_id(obj: Any, /) -> Any:
+    config = obj.__mongoclass_config__
+    return getattr(obj, config.id_field.name)
 
 
-def get_id_field(cls, /):
-    for field in fields(cls):
-        if get_field_name(field) == "_id":
-            return field
-    raise TypeError(f"Object {cls} has no _id field")
+def set_id(obj: Any, /, value: Any) -> None:
+    config = obj.__mongoclass_config__
+    setattr(obj, config.id_field.name, value)
 
 
-def set_id(obj, /, id):
-    field = get_id_field(type(obj))
-    setattr(obj, field.name, id)
+def get_collection(obj: Any, /) -> Union[Collection, AsyncIOMotorCollection]:
+    config = obj.__mongoclass_config__
+    return config.collection
 
 
-def get_id(obj, /):
-    field = get_id_field(type(obj))
-    return getattr(obj, field.name)
+def is_mongoclass(obj: Any, /) -> bool:
+    cls = obj if isinstance(obj, type) else type(obj)
+    return hasattr(cls, "__mongoclass_config__")
 
 
-def is_dataclass_type(obj, /):
-    if not is_dataclass(obj):
-        return False
-
-    return inspect.isclass(obj)
-
-
-def is_dataclass_instance(obj, /):
-    return is_dataclass_type(type(obj))
-
-
-def is_mongoclass(obj, /):
-    if not is_dataclass(obj):
-        return False
-
-    if "collection" not in obj.__dataclass_fields__:
-        return False
-
-    if obj.__dataclass_fields__["collection"]._field_type is not _FIELD_CLASSVAR:
-        return False
-
-    if "_id" in obj.__dataclass_fields__:
-        return True
-
-    try:
-        get_id_field(obj)
-    except TypeError:
-        return False
-    else:
-        return True
-
-
-def is_mongoclass_type(obj, /):
-    if not is_mongoclass(obj):
-        return False
-
-    return inspect.isclass(obj)
-
-
-def is_mongoclass_instance(obj, /):
-    return is_mongoclass_type(type(obj))
+def _is_mongoclass_instance(obj: Any, /) -> bool:
+    return hasattr(type(obj), "__mongoclass_config__")

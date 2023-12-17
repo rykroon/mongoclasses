@@ -13,7 +13,7 @@ from .operations import (
     replace_one,
     update_one,
 )
-from .utils import FieldMeta, get_id, is_mongoclass
+from .utils import FieldMeta, get_id, is_mongoclass, mongoclass
 
 __all__ = [
     "ainsert_one",
@@ -32,4 +32,5 @@ __all__ = [
     "find",
     "replace_one",
     "FieldMeta",
+    "mongoclass",
 ]
