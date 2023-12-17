@@ -81,9 +81,7 @@ async def aupdate_one(obj: T, update: Dict[str, Any], /) -> UpdateResult:
         raise TypeError("Not a mongoclass instance.")
 
     collection = get_collection(obj)
-    result = await collection.update_one(
-        filter={"_id": get_id(obj)}, update=update
-    )
+    result = await collection.update_one(filter={"_id": get_id(obj)}, update=update)
     assert isinstance(result, UpdateResult)
     return result
 
