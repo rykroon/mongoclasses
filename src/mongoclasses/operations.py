@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional, Type, TypeVar
+from typing import Any, Dict, List, Literal, Optional, Tuple, Type, TypeVar
 
 from pymongo import IndexModel
 from pymongo.results import InsertOneResult, UpdateResult, DeleteResult
@@ -55,7 +55,7 @@ async def ainsert_one(obj: T, /) -> InsertOneResult:
 ainsert_one.__doc__ = insert_one.__doc__
 
 
-def update_one(obj: T, update: dict[str, Any], /) -> UpdateResult:
+def update_one(obj: T, update: Dict[str, Any], /) -> UpdateResult:
     """
     Updates the object in the database.
 
@@ -76,7 +76,7 @@ def update_one(obj: T, update: dict[str, Any], /) -> UpdateResult:
     return collection.update_one(filter={"_id": get_id(obj)}, update=update)
 
 
-async def aupdate_one(obj: T, update: dict[str, Any], /) -> UpdateResult:
+async def aupdate_one(obj: T, update: Dict[str, Any], /) -> UpdateResult:
     if not _is_mongoclass_instance(obj):
         raise TypeError("Not a mongoclass instance.")
 
@@ -164,7 +164,7 @@ async def adelete_one(obj: T, /) -> DeleteResult:
 adelete_one.__doc__ = delete_one.__doc__
 
 
-def find_one(cls: Type[T], /, filter: Optional[dict[str, Any]] = None) -> T | None:
+def find_one(cls: Type[T], /, filter: Optional[Dict[str, Any]] = None) -> Optional[T]:
     """
     Return a single instance that matches the query or None.
 
@@ -189,8 +189,8 @@ def find_one(cls: Type[T], /, filter: Optional[dict[str, Any]] = None) -> T | No
 
 
 async def afind_one(
-    cls: Type[T], /, filter: Optional[dict[str, Any]] = None
-) -> T | None:
+    cls: Type[T], /, filter: Optional[Dict[str, Any]] = None
+) -> Optional[T]:
     if not is_mongoclass(cls):
         raise TypeError("Not a mongoclass.")
 
@@ -207,10 +207,10 @@ afind_one.__doc__ = find_one.__doc__
 def find(
     cls: Type[T],
     /,
-    filter: Optional[dict[str, Any]] = None,
+    filter: Optional[Dict[str, Any]] = None,
     skip: int = 0,
     limit: int = 0,
-    sort: Optional[list[tuple[str, Literal[-1, 1]]]] = None,
+    sort: Optional[List[Tuple[str, Literal[-1, 1]]]] = None,
 ):
     """
     Performs a query on the mongoclass.

@@ -1,9 +1,9 @@
 from dataclasses import Field
-from typing import Any, ClassVar, Protocol
+from typing import Any, ClassVar, Dict, Protocol
 
 
 class DataclassInstance(Protocol):
-    __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
+    __dataclass_fields__: ClassVar[Dict[str, Field]]
 
 
 class MongoclassInstance(DataclassInstance):

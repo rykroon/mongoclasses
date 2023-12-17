@@ -1,8 +1,7 @@
 from dataclasses import dataclass, field
 import pytest
 from typing import List, Dict
-from typing_extensions import Annotated, Optional
-from mongoclasses.serialization import to_document, from_document, resolve_type
+from mongoclasses.serialization import to_document, from_document
 
 
 def test_to_document():
@@ -87,9 +86,3 @@ def test_from_document_non_init_field():
     foo.baz = 1
     assert from_document(Foo, {"bar": "bar", "baz": 1}) == foo
 
-
-def test_resolve_type():
-    assert resolve_type(int) == int
-    assert resolve_type(Annotated[int, ...]) == int  # test for Annotated types
-    assert resolve_type(Optional[int]) == (int, type(None))  # test for Union types
-    assert resolve_type(List[str]) == list

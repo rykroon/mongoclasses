@@ -1,6 +1,6 @@
 
 from dataclasses import dataclass, fields, is_dataclass, Field
-from typing import Any, Optional, Union
+from typing import Any, List, Optional, Union
 from typing_extensions import Annotated, get_origin
 
 from pymongo import IndexModel
@@ -13,7 +13,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 class MongoClassConfig:
     collection: Union[Collection, AsyncIOMotorCollection]
     id_field: Field
-    indexes: list[IndexModel]
+    indexes: List[IndexModel]
 
 
 @dataclass(frozen=True)
@@ -26,7 +26,7 @@ def mongoclass(
     *,
     db: Union[Database, AsyncIOMotorDatabase],
     collection_name: Optional[str] = None,
-    indexes: Optional[list[IndexModel]] = None,
+    indexes: Optional[List[IndexModel]] = None,
 ):
     if indexes is None:
         indexes = []

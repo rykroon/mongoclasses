@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from dataclasses import is_dataclass, fields
-from typing import Union
-from typing_extensions import get_args, get_origin, Annotated
+
+import dacite
 
 from .utils import get_field_name
 
@@ -40,53 +40,4 @@ def from_document(cls, /, data):
     if not is_dataclass(cls):
         raise TypeError("Object must be a dataclass type.")
 
-    init_values = {}
-    non_init_values = {}
-    for field in fields(cls):
-        db_field = get_field_name(field)
-        if db_field not in data:
-            continue
-
-        value = data[db_field]
-
-        if isinstance(value, Mapping) and is_dataclass(field.type):
-            value = from_document(field.type, value)
-
-        if field.init:
-            init_values[field.name] = value
-        else:
-            non_init_values[field.name] = value
-
-    obj = cls(**init_values)
-    for field_name, value in non_init_values.items():
-        setattr(obj, field_name, value)
-
-    return obj
-
-
-def resolve_type(t):
-    origin = get_origin(t)
-    if origin is None:
-        return t
-
-    if origin is Annotated:
-        return resolve_type(get_args(t)[0])
-
-    if is_union(t):
-        return tuple([resolve_type(arg) for arg in get_args(t)])
-
-    return origin
-
-
-def is_union(t):
-    if get_origin(t) is Union:
-        return True
-
-    try:
-        # UnionType was introduced in python 3.10
-        from types import UnionType
-
-        return isinstance(t, UnionType)
-
-    except ImportError:
-        return False
+    return dacite.from_dict(cls, data, config=dacite.Config(check_types=False))
