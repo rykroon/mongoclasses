@@ -1,11 +1,17 @@
 from dataclasses import dataclass, fields, is_dataclass, Field
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Type, TypeVar, Union
 from typing_extensions import Annotated, get_origin
 
 from pymongo import IndexModel
 from pymongo.collection import Collection
 from pymongo.database import Database
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
+
+from .types import DataclassInstance, MongoclassInstance
+
+
+DT = TypeVar("DT", bound=DataclassInstance)
+MT = TypeVar("MT", bound=MongoclassInstance)
 
 
 @dataclass(frozen=True)
@@ -30,13 +36,18 @@ def mongoclass(
     if indexes is None:
         indexes = []
 
-    def decorator(cls):
+    def decorator(cls: Type[DT]) -> Type[MT]:
         return _process_class(cls, db, collection_name, indexes)
 
     return decorator
 
 
-def _process_class(cls, db, collection_name, indexes):
+def _process_class(
+    cls: Type[DT],
+    db: Union[Database, AsyncIOMotorDatabase],
+    collection_name: Optional[str],
+    indexes: List[IndexModel],
+) -> Type[MT]:
     if not is_dataclass(cls):
         raise TypeError(f"Class {cls} is not a dataclass")
 

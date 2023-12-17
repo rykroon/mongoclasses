@@ -1,12 +1,17 @@
 from collections.abc import Mapping
 from dataclasses import is_dataclass, fields
+from typing import Any, Dict, Type, TypeVar
 
 import dacite
 
 from .utils import get_field_name
+from .types import DataclassInstance
 
 
-def to_document(obj, /):
+T = TypeVar("T", bound=DataclassInstance)
+
+
+def to_document(obj: T, /) -> Dict[str, Any]:
     """
     Converts a dataclass instance to a dictionary.
     """
@@ -20,7 +25,7 @@ def to_document(obj, /):
     }
 
 
-def _to_document_inner(value, /):
+def _to_document_inner(value: Any, /) -> Any:
     if is_dataclass(value):
         return to_document(value)
 
@@ -33,7 +38,7 @@ def _to_document_inner(value, /):
     return value
 
 
-def from_document(cls, /, data):
+def from_document(cls: Type[T], /, data: Dict[str, Any]) -> T:
     """
     Attempts to create a dataclass instance from a dictionary.
     """

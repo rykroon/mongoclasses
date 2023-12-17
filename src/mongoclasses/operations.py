@@ -1,6 +1,19 @@
-from typing import Any, Dict, List, Literal, Optional, Tuple, Type, TypeVar
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
+from motor.motor_asyncio import AsyncIOMotorCursor
 from pymongo import IndexModel
+from pymongo.cursor import Cursor
 from pymongo.results import InsertOneResult, UpdateResult, DeleteResult
 
 from .serialization import to_document, from_document
@@ -209,7 +222,7 @@ def find(
     skip: int = 0,
     limit: int = 0,
     sort: Optional[List[Tuple[str, Literal[-1, 1]]]] = None,
-):
+) -> Union[Cursor, AsyncIOMotorCursor]:
     """
     Performs a query on the mongoclass.
 
@@ -235,17 +248,17 @@ def find(
     return collection.find(filter=filter, skip=skip, limit=limit, sort=sort)
 
 
-def iter_objects(cls: Type[T], cursor):
+def iter_objects(cls: Type[T], cursor: Cursor) -> Iterable[T]:
     for document in cursor:
         yield from_document(cls, document)
 
 
-async def aiter_objects(cls: Type[T], cursor):
+async def aiter_objects(cls: Type[T], cursor: AsyncIOMotorCursor) -> Iterable[T]:
     async for document in cursor:
         yield from_document(cls, document)
 
 
-def create_indexes(cls: Type[T], /):
+def create_indexes(cls: Type[T], /) -> None:
     """
     Creates the indexes specified by the mongoclass.
 
