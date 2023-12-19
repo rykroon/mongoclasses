@@ -4,7 +4,7 @@ from typing_extensions import Annotated  # Introduced in Python 3.9
 
 import pytest
 
-from mongoclasses.utils import (
+from mongoclasses import (
     get_id,
     get_field_meta,
     get_field_name,

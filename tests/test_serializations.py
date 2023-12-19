@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 import pytest
 from typing import List, Dict
-from mongoclasses.serialization import to_document, from_document
+from mongoclasses import to_document, from_document
 
 
 def test_to_document():
