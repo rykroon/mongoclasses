@@ -13,10 +13,11 @@ from typing import (
     TypeVar,
     Union,
 )
-from typing_extensions import Annotated, get_origin
+from typing_extensions import Annotated, TypeGuard, get_origin
 
 import cattrs
 from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn, override
+from cattrs.preconf.bson import make_converter
 from motor.motor_asyncio import (
     AsyncIOMotorCollection,
     AsyncIOMotorCursor,
@@ -76,10 +77,11 @@ def _process_class(
     indexes: List[IndexModel],
 ) -> Type[MongoclassInstance]:
     if not is_dataclass(cls):
-        raise TypeError(f"Class {cls} is not a dataclass")
+        cls = dataclass(cls)
 
     if collection_name is None:
         collection_name = cls.__name__.lower()
+
     collection = db[collection_name]
 
     id_field = None
@@ -97,7 +99,7 @@ def _process_class(
     if id_field is None:
         raise TypeError(f"Class {cls} has no _id field")
 
-    converter = cattrs.Converter()
+    converter = make_converter()
     if overrides:
         unstruct_func = make_dict_unstructure_fn(cls, converter, **overrides)
         struct_func = make_dict_structure_fn(cls, converter, **overrides)
@@ -114,6 +116,15 @@ def _process_class(
     return cls
 
 
+def _get_field_name(field: Field) -> str:
+    field_meta = _get_field_meta(field)
+
+    if field_meta is not None and field_meta.db_field is not None:
+        return field_meta.db_field
+
+    return field.name
+
+
 def _get_field_meta(field: Field) -> Optional[FieldMeta]:
     if get_origin(field.type) is not Annotated:
         return None
@@ -125,59 +136,67 @@ def _get_field_meta(field: Field) -> Optional[FieldMeta]:
     return None
 
 
-def _get_field_name(field: Field) -> str:
-    field_meta = _get_field_meta(field)
-
-    if field_meta is not None and field_meta.db_field is not None:
-        return field_meta.db_field
-
-    return field.name
-
-
 def get_id(obj: MongoclassInstance, /) -> Any:
-    config = obj.__mongoclass_config__
+    try:
+        config = type(obj).__mongoclass_config__
+    except AttributeError:
+        raise TypeError("Object must be a mongoclass instance.")
+
     return getattr(obj, config.id_field.name)
 
 
 def set_id(obj: MongoclassInstance, /, value: Any) -> None:
-    config = obj.__mongoclass_config__
+    try:
+        config = type(obj).__mongoclass_config__
+    except AttributeError:
+        raise TypeError("Object must be a mongoclass instance.")
+
     setattr(obj, config.id_field.name, value)
 
 
-def get_collection(obj: Any, /) -> Union[Collection, AsyncIOMotorCollection]:
-    config = obj.__mongoclass_config__
+def get_collection(
+    obj: Union[Type[MongoclassInstance], MongoclassInstance], /
+) -> Union[Collection, AsyncIOMotorCollection]:
+    try:
+        config = obj.__mongoclass_config__
+    except AttributeError:
+        raise TypeError("Object must be a mongoclass.")
+
     return config.collection
 
 
-def is_mongoclass(obj: Any, /) -> bool:
+def get_converter(
+    obj: Union[Type[MongoclassInstance], MongoclassInstance], /
+) -> cattrs.Converter:
+    try:
+        config = obj.__mongoclass_config__
+    except AttributeError:
+        raise TypeError("Object must be a mongoclass.")
+
+    return config.converter
+
+
+def is_mongoclass(
+    obj: Any, /
+) -> TypeGuard[Union[Type[MongoclassInstance], MongoclassInstance]]:
     cls = obj if isinstance(obj, type) else type(obj)
     return hasattr(cls, "__mongoclass_config__")
-
-
-def _is_mongoclass_instance(obj: Any, /) -> bool:
-    return hasattr(type(obj), "__mongoclass_config__")
 
 
 def to_document(obj: MongoclassInstance, /) -> Dict[str, Any]:
     """
     Converts a dataclass instance to a dictionary.
     """
-    if not _is_mongoclass_instance(obj):
-        raise TypeError("Object must be a mongoclass instance.")
-
-    return obj.__mongoclass_config__.converter.unstructure(obj)
+    converter = get_converter(type(obj))
+    return converter.unstructure(obj)
 
 
-def from_document(
-    cls: Type[MongoclassInstance], /, data: Dict[str, Any]
-) -> MongoclassInstance:
+def from_document(cls: Type[T], /, data: Dict[str, Any]) -> T:
     """
     Attempts to create a dataclass instance from a dictionary.
     """
-    if not is_mongoclass(cls):
-        raise TypeError("Object must be a mongoclass type.")
-
-    return cls.__mongoclass_config__.converter.structure(data, cls)
+    converter = get_converter(cls)
+    return converter.structure(data, cls)
 
 
 def insert_one(obj: T, /) -> InsertOneResult:
@@ -193,9 +212,6 @@ def insert_one(obj: T, /) -> InsertOneResult:
     Returns:
         A pymongo `InsertOneResult` object.
     """
-    if not _is_mongoclass_instance(obj):
-        raise TypeError("Not a mongoclass instance.")
-
     document = to_document(obj)
     collection = get_collection(obj)
     result = collection.insert_one(document)
@@ -204,9 +220,6 @@ def insert_one(obj: T, /) -> InsertOneResult:
 
 
 async def ainsert_one(obj: T, /) -> InsertOneResult:
-    if not _is_mongoclass_instance(obj):
-        raise TypeError("Not a mongoclass instance.")
-
     document = to_document(obj)
     collection = get_collection(obj)
     result = await collection.insert_one(document)
@@ -232,17 +245,11 @@ def update_one(obj: T, update: Dict[str, Any], /) -> UpdateResult:
     Returns:
         A pymongo `UpdateResult` object.
     """
-    if not _is_mongoclass_instance(obj):
-        raise TypeError("Not a mongoclass instance.")
-
     collection = get_collection(obj)
     return collection.update_one(filter={"_id": get_id(obj)}, update=update)
 
 
 async def aupdate_one(obj: T, update: Dict[str, Any], /) -> UpdateResult:
-    if not _is_mongoclass_instance(obj):
-        raise TypeError("Not a mongoclass instance.")
-
     collection = get_collection(obj)
     result = await collection.update_one(filter={"_id": get_id(obj)}, update=update)
     assert isinstance(result, UpdateResult)
@@ -266,9 +273,6 @@ def replace_one(obj: T, /, upsert: bool = False) -> UpdateResult:
     Returns:
         A pymongo `UpdateResult` object.
     """
-    if not _is_mongoclass_instance(obj):
-        raise TypeError("Not a mongoclass instance.")
-
     document = to_document(obj)
     collection = get_collection(obj)
     return collection.replace_one(
@@ -277,9 +281,6 @@ def replace_one(obj: T, /, upsert: bool = False) -> UpdateResult:
 
 
 async def areplace_one(obj: T, /, upsert: bool = False) -> UpdateResult:
-    if not _is_mongoclass_instance(obj):
-        raise TypeError("Not a mongoclass instance.")
-
     document = to_document(obj)
     collection = get_collection(obj)
     result = await collection.replace_one(
@@ -305,17 +306,11 @@ def delete_one(obj: T, /) -> DeleteResult:
     Returns:
         A pymongo `DeleteResult` object.
     """
-    if not _is_mongoclass_instance(obj):
-        raise TypeError("Not a mongoclass instance.")
-
     collection = get_collection(obj)
     return collection.delete_one({"_id": get_id(obj)})
 
 
 async def adelete_one(obj: T, /) -> DeleteResult:
-    if not _is_mongoclass_instance(obj):
-        raise TypeError("Not a mongoclass instance.")
-
     collection = get_collection(obj)
     result = await collection.delete_one({"_id": get_id(obj)})
     assert isinstance(result, DeleteResult)
@@ -339,9 +334,6 @@ def find_one(cls: Type[T], /, filter: Optional[Dict[str, Any]] = None) -> Option
     Returns:
         A mongoclass instance or None.
     """
-    if not is_mongoclass(cls):
-        raise TypeError("Not a mongoclass.")
-
     collection = get_collection(cls)
     document = collection.find_one(filter=filter)
     if document is None:
@@ -352,9 +344,6 @@ def find_one(cls: Type[T], /, filter: Optional[Dict[str, Any]] = None) -> Option
 async def afind_one(
     cls: Type[T], /, filter: Optional[Dict[str, Any]] = None
 ) -> Optional[T]:
-    if not is_mongoclass(cls):
-        raise TypeError("Not a mongoclass.")
-
     collection = get_collection(cls)
     document = await collection.find_one(filter=filter)
     if document is None:
@@ -391,9 +380,6 @@ def find(
         A `Cursor` object if the mongoclass's collection is synchronous or an \
             `AsyncCursor` object if the collection is asynchronous.
     """
-    if not is_mongoclass(cls):
-        raise TypeError("Not a mongoclass.")
-
     collection = get_collection(cls)
     return collection.find(filter=filter, skip=skip, limit=limit, sort=sort)
 
@@ -418,7 +404,4 @@ def create_indexes(cls: Type[T], /) -> None:
     Raises:
         TypeError: If the class is not a mongoclass.
     """
-    if not is_mongoclass(cls):
-        raise TypeError("Not a mongoclass.")
-
     pass
