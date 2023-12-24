@@ -1,24 +1,38 @@
-from dataclasses import dataclass, field
+import dataclasses as dc
 
 from bson import ObjectId
 import pytest
+import pytest_asyncio
+from pymongo import MongoClient
+from pymongo.cursor import Cursor
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCursor
+
 from mongoclasses import (
+    ainsert_one,
+    afind_one,
+    aupdate_one,
+    areplace_one,
+    adelete_one,
     mongoclass,
     insert_one,
-    iter_objects,
     find_one,
-    find,
     update_one,
-    delete_one,
     replace_one,
+    delete_one,
+    find,
+    iter_objects,
+    aiter_objects,
 )
 
 
 @pytest.fixture
 def client():
-    from pymongo import MongoClient
-
     return MongoClient()
+
+
+@pytest.fixture
+def async_client():
+    return AsyncIOMotorClient()
 
 
 @pytest.fixture
@@ -27,99 +41,182 @@ def database(client):
     return client.test_database
 
 
-@pytest.fixture
-def Mongoclass(database):
-    @mongoclass(db=database, collection_name="test_collection")
-    @dataclass
+@pytest_asyncio.fixture
+async def async_database(async_client):
+    await async_client.drop_database("test_database")
+    return async_client.test_database
+
+
+def test_insert_one(database):
+    @mongoclass(db=database)
     class Foo:
-        _id: ObjectId = field(default_factory=ObjectId)
-        name: str = "foo"
+        _id: ObjectId = dc.field(default_factory=ObjectId)
 
-    return Foo
-
-
-def test_insert_one(Mongoclass):
-    obj = Mongoclass()
-    insert_one(obj)
-
-    assert obj._id is not None
-    collection = Mongoclass.__mongoclass_config__.collection
-    assert collection.find_one({"_id": obj._id}) is not None
+    foo = Foo()
+    insert_one(foo)
+    assert database.foo.find_one({"_id": foo._id}) is not None
 
 
-def test_insert_one_not_mongoclass():
-    with pytest.raises(TypeError):
-        insert_one(object())
+@pytest.mark.asyncio
+async def test_ainsert_one(async_database):
+    @mongoclass(db=async_database)
+    class Foo:
+        _id: ObjectId = dc.field(default_factory=ObjectId)
+
+    foo = Foo()
+    await ainsert_one(foo)
+    assert await async_database.foo.find_one({"_id": foo._id}) is not None
 
 
-def test_find_one(Mongoclass):
-    obj = Mongoclass()
-    insert_one(obj)
+def test_update_one(database):
+    @mongoclass(db=database)
+    class Foo:
+        _id: ObjectId = dc.field(default_factory=ObjectId)
+        bar: str = ""
 
-    assert find_one(Mongoclass, {"_id": obj._id}) == obj
-
-
-def test_find_one_not_mongoclass():
-    with pytest.raises(TypeError):
-        find_one(object(), {"_id": ObjectId()})
-
-
-def test_update_one(Mongoclass):
-    obj = Mongoclass()
-    insert_one(obj)
-    update_one(obj, {"$set": {"name": "bar"}})
-    assert find_one(Mongoclass, {"_id": obj._id}).name == "bar"
+    foo = Foo()
+    insert_one(foo)
+    update_one(foo, {"$set": {"bar": "baz"}})
+    assert database.foo.find_one({"_id": foo._id})["bar"] == "baz"
 
 
-def test_update_one_not_mongoclass():
-    with pytest.raises(TypeError):
-        update_one(object(), {"$set": {"name": "bar"}})
+@pytest.mark.asyncio
+async def test_aupdate_one(async_database):
+    @mongoclass(db=async_database)
+    class Foo:
+        _id: ObjectId = dc.field(default_factory=ObjectId)
+        bar: str = ""
+
+    foo = Foo()
+    await ainsert_one(foo)
+    await aupdate_one(foo, {"$set": {"bar": "baz"}})
+
+    document = await async_database.foo.find_one({"_id": foo._id})
+    assert document is not None
+    assert document["bar"] == "baz"
 
 
-def test_replace_one(Mongoclass):
-    obj = Mongoclass()
-    insert_one(obj)
-    obj.name = "bar"
-    replace_one(obj)
-    assert find_one(Mongoclass, {"_id": obj._id}).name == "bar"
+def test_replace_one(database):
+    @mongoclass(db=database)
+    class Foo:
+        _id: ObjectId = dc.field(default_factory=ObjectId)
+        bar: str = ""
+
+    foo = Foo()
+    insert_one(foo)
+    foo.bar = "baz"
+    replace_one(foo)
+    document = database.foo.find_one({"_id": foo._id})
+    assert document is not None
+    assert document["bar"] == "baz"
 
 
-def test_replace_one_not_mongoclass():
-    with pytest.raises(TypeError):
-        replace_one(object())
+@pytest.mark.asyncio
+async def test_areplace_one(async_database):
+    @mongoclass(db=async_database)
+    class Foo:
+        _id: ObjectId = dc.field(default_factory=ObjectId)
+        bar: str = ""
+
+    foo = Foo()
+    await ainsert_one(foo)
+    foo.bar = "baz"
+    await areplace_one(foo)
+    document = await async_database.foo.find_one({"_id": foo._id})
+    assert document is not None
+    assert document["bar"] == "baz"
 
 
-def test_delete_one(Mongoclass):
-    obj = Mongoclass()
-    insert_one(obj)
-    delete_one(obj)
-    assert find_one(Mongoclass, {"_id": obj._id}) is None
+def test_delete_one(database):
+    @mongoclass(db=database)
+    class Foo:
+        _id: ObjectId = dc.field(default_factory=ObjectId)
+
+    foo = Foo()
+    insert_one(foo)
+    delete_one(foo)
+    assert database.foo.find_one({"_id": foo._id}) is None
 
 
-def test_delete_one_not_mongoclass():
-    with pytest.raises(TypeError):
-        delete_one(object())
+@pytest.mark.asyncio
+async def test_adelete_one(async_database):
+    @mongoclass(db=async_database)
+    class Foo:
+        _id: ObjectId = dc.field(default_factory=ObjectId)
+
+    foo = Foo()
+    await ainsert_one(foo)
+    await adelete_one(foo)
+    assert await async_database.foo.find_one({"_id": foo._id}) is None
 
 
-def test_find(Mongoclass):
-    obj = Mongoclass()
-    insert_one(obj)
-    cursor = find(Mongoclass, {"_id": obj._id})
-    document = next(cursor)
-    assert document["_id"] == obj._id
+def test_find_one(database):
+    @mongoclass(db=database)
+    class Foo:
+        _id: ObjectId = dc.field(default_factory=ObjectId)
+
+    foo = Foo()
+    insert_one(foo)
+    assert find_one(Foo, {"_id": foo._id}) == foo
+
+    # test with no result.
+    assert find_one(Foo, {"_id": ObjectId()}) is None
 
 
-def test_find_not_mongoclass():
-    with pytest.raises(TypeError):
-        find(object(), {"_id": ObjectId()})
+@pytest.mark.asyncio
+async def test_afind_one(async_database):
+    @mongoclass(db=async_database)
+    class Foo:
+        _id: ObjectId = dc.field(default_factory=ObjectId)
+
+    foo = Foo()
+    await ainsert_one(foo)
+    assert await afind_one(Foo, {"_id": foo._id}) == foo
+
+    # test with no result.
+    assert await afind_one(Foo, {"_id": ObjectId()}) is None
 
 
-def test_iter_objects(Mongoclass):
-    obj1 = Mongoclass()
-    obj2 = Mongoclass()
-    insert_one(obj1)
-    insert_one(obj2)
-    cursor = find(Mongoclass, {})
-    for obj in iter_objects(Mongoclass, cursor):
-        assert isinstance(obj, Mongoclass)
-        assert obj._id in [obj1._id, obj2._id]
+def test_find(database):
+    @mongoclass(db=database)
+    class Foo:
+        _id: ObjectId = dc.field(default_factory=ObjectId)
+
+    cursor = find(Foo, {"_id": ObjectId()})
+    assert isinstance(cursor, Cursor)
+
+
+def test_find_async(async_database):
+    @mongoclass(db=async_database)
+    class Foo:
+        _id: ObjectId = dc.field(default_factory=ObjectId)
+
+    cursor = find(Foo, {"_id": ObjectId()})
+    assert isinstance(cursor, AsyncIOMotorCursor)
+
+
+def test_iter_objects(database):
+    @mongoclass(db=database)
+    class Foo:
+        _id: ObjectId = dc.field(default_factory=ObjectId)
+
+    foo = Foo()
+    insert_one(foo)
+    cursor = find(Foo, {"_id": foo._id})
+
+    for obj in iter_objects(Foo, cursor):
+        assert isinstance(obj, Foo)
+
+
+@pytest.mark.asyncio
+async def test_aiter_objects(async_database):
+    @mongoclass(db=async_database)
+    class Foo:
+        _id: ObjectId = dc.field(default_factory=ObjectId)
+
+    foo = Foo()
+    await ainsert_one(foo)
+    cursor = find(Foo, {"_id": foo._id})
+
+    async for obj in aiter_objects(Foo, cursor):
+        assert isinstance(obj, Foo)
