@@ -1,9 +1,9 @@
-from collections.abc import Iterable
 from dataclasses import dataclass, fields, is_dataclass, Field
 from typing import (
     Any,
     ClassVar,
     Dict,
+    Iterable,
     List,
     Literal,
     Optional,
@@ -397,7 +397,7 @@ async def aiter_objects(cls: Type[T], cursor: AsyncIOMotorCursor) -> Iterable[T]
         yield from_document(cls, document)
 
 
-def create_indexes(cls: Type[T], /) -> list[str]:
+def create_indexes(cls: Type[T], /) -> List[str]:
     """
     Creates the indexes specified by the mongoclass.
 
@@ -411,7 +411,7 @@ def create_indexes(cls: Type[T], /) -> list[str]:
     return collection.create_indexes(list(cls.__mongoclass_config__.indexes))
 
 
-async def acreate_indexes(cls: Type[T], /) -> None:
+async def acreate_indexes(cls: Type[T], /) -> List[str]:
     collection = get_collection(cls)
     return await collection.create_indexes(list(cls.__mongoclass_config__.indexes))
 

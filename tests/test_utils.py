@@ -1,9 +1,10 @@
 import dataclasses as dc
-from typing import Annotated, Any
+from typing import Any
 
 from bson import ObjectId, SON
 import cattrs
-from pymongo import IndexModel, MongoClient
+from pymongo import MongoClient
+from typing_extensions import Annotated
 
 import pytest
 

@@ -1,5 +1,4 @@
 import dataclasses as dc
-from typing import Annotated
 
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCursor
@@ -7,6 +6,7 @@ from pymongo import MongoClient
 from pymongo.cursor import Cursor
 import pytest
 import pytest_asyncio
+from typing_extensions import Annotated
 
 
 from mongoclasses import (
