@@ -1,9 +1,9 @@
 import dataclasses as dc
 from typing import Annotated, Any
 
-from bson import ObjectId
+from bson import ObjectId, SON
 import cattrs
-from pymongo import MongoClient
+from pymongo import IndexModel, MongoClient
 
 import pytest
 
@@ -70,6 +70,17 @@ def test_mongoclass_missing_id_field(database):
         @mongoclass(db=database)
         class Foo:
             _id: Annotated[int, FieldMeta(db_field="not_id")] = 0
+
+
+def test_mongoclass_with_unique_field(database):
+    @mongoclass(db=database)
+    class Foo:
+        _id: ObjectId = dc.field(default_factory=ObjectId)
+        name: Annotated[str, FieldMeta(unique=True)] = ""
+
+    assert [idx.document for idx in Foo.__mongoclass_config__.indexes] == [
+        {"name": "name_1", "unique": True, "key": SON([("name", 1)])}
+    ]
 
 
 def test_get_field_meta(database):

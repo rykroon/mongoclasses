@@ -1,19 +1,23 @@
 import dataclasses as dc
+from typing import Annotated
 
 from bson import ObjectId
-import pytest
-import pytest_asyncio
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCursor
 from pymongo import MongoClient
 from pymongo.cursor import Cursor
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCursor
+import pytest
+import pytest_asyncio
+
 
 from mongoclasses import (
+    acreate_indexes,
     ainsert_one,
     afind_one,
     aupdate_one,
     areplace_one,
     adelete_one,
     mongoclass,
+    create_indexes,
     insert_one,
     find_one,
     update_one,
@@ -22,6 +26,7 @@ from mongoclasses import (
     find,
     iter_objects,
     aiter_objects,
+    FieldMeta,
 )
 
 
@@ -220,3 +225,22 @@ async def test_aiter_objects(async_database):
 
     async for obj in aiter_objects(Foo, cursor):
         assert isinstance(obj, Foo)
+
+
+def test_create_indexes(database):
+    @mongoclass(db=database)
+    class Foo:
+        _id: ObjectId = dc.field(default_factory=ObjectId)
+        name: Annotated[str, FieldMeta(unique=True)] = ""
+
+    assert create_indexes(Foo) == ["name_1"]
+
+
+@pytest.mark.asyncio
+async def test_acreate_indexes(async_database):
+    @mongoclass(db=async_database)
+    class Foo:
+        _id: ObjectId = dc.field(default_factory=ObjectId)
+        name: Annotated[str, FieldMeta(unique=True)] = ""
+
+    assert await acreate_indexes(Foo) == ["name_1"]

@@ -34,7 +34,7 @@ from pymongo.results import InsertOneResult, UpdateResult, DeleteResult
 class MongoClassConfig:
     collection: Union[Collection, AsyncIOMotorCollection]
     id_field: Field
-    indexes: List[IndexModel]
+    indexes: Tuple[IndexModel, ...]
     converter: cattrs.Converter
 
 
@@ -95,6 +95,9 @@ def _process_class(
             overrides[field.name] = override(rename=field_name)
 
         # Check for indexes
+        field_meta = _get_field_meta(field)
+        if field_meta is not None and field_meta.unique is True:
+            indexes.append(IndexModel(field_name, unique=True))
 
     if id_field is None:
         raise TypeError(f"Class {cls} has no _id field")
@@ -109,7 +112,7 @@ def _process_class(
     config = MongoClassConfig(
         collection=collection,
         id_field=id_field,
-        indexes=indexes,
+        indexes=tuple(indexes),
         converter=converter,
     )
     setattr(cls, "__mongoclass_config__", config)
@@ -394,14 +397,23 @@ async def aiter_objects(cls: Type[T], cursor: AsyncIOMotorCursor) -> Iterable[T]
         yield from_document(cls, document)
 
 
-def create_indexes(cls: Type[T], /) -> None:
+def create_indexes(cls: Type[T], /) -> list[str]:
     """
     Creates the indexes specified by the mongoclass.
 
     Parameters:
         cls: A mongoclass.
-
-    Raises:
-        TypeError: If the class is not a mongoclass.
+    
+    Returns:
+        A list of index names.
     """
-    pass
+    collection = get_collection(cls)
+    return collection.create_indexes(list(cls.__mongoclass_config__.indexes))
+
+
+async def acreate_indexes(cls: Type[T], /) -> None:
+    collection = get_collection(cls)
+    return await collection.create_indexes(list(cls.__mongoclass_config__.indexes))
+
+
+acreate_indexes.__doc__ = create_indexes.__doc__
