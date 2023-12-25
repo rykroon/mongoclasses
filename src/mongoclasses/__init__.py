@@ -60,24 +60,26 @@ def mongoclass(
     db: Union[Database, AsyncIOMotorDatabase],
     collection_name: Optional[str] = None,
     indexes: Optional[List[IndexModel]] = None,
+    **dataclass_kwargs: Any,
 ):
     if indexes is None:
         indexes = []
 
-    def decorator(cls: Type[DataclassInstance]) -> Type[MongoclassInstance]:
-        return _process_class(cls, db, collection_name, indexes)
+    def decorator(cls: Type[Any]) -> Type[MongoclassInstance]:
+        return _process_class(cls, db, collection_name, indexes, dataclass_kwargs)
 
     return decorator
 
 
 def _process_class(
-    cls: Type[DataclassInstance],
+    cls: Type[Any],
     db: Union[Database, AsyncIOMotorDatabase],
     collection_name: Optional[str],
     indexes: List[IndexModel],
+    dataclass_kwargs: Dict[str, Any],
 ) -> Type[MongoclassInstance]:
-    if not is_dataclass(cls):
-        cls = dataclass(cls)
+    if not is_dataclass(cls) or dataclass_kwargs:
+        cls = dataclass(**dataclass_kwargs)(cls)
 
     if collection_name is None:
         collection_name = cls.__name__.lower()
