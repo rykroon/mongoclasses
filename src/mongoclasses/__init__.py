@@ -1,6 +1,7 @@
 from dataclasses import dataclass, fields, is_dataclass, Field
 from typing import (
     Any,
+    Callable,
     ClassVar,
     Dict,
     Iterable,
@@ -55,31 +56,53 @@ class DeveloperError(Exception):
 
 @dataclass(frozen=True)
 class FieldMeta:
+    """
+    Metadata for mongoclass fields.
+    """
+
     db_field: Optional[str] = None
     unique: bool = False
 
 
 def mongoclass(
+    cls: Optional[Type[Any]] = None,
+    /,
     *,
     db: Union[Database, AsyncIOMotorDatabase, None] = None,
     collection_name: Optional[str] = None,
     indexes: Optional[List[IndexModel]] = None,
     **dataclass_kwargs: Any,
-):
-    if indexes is None:
-        indexes = []
+) -> Union[Type[MongoclassInstance], Callable[[Type[Any]], Type[MongoclassInstance]]]:
+    """
+    Converts a class into a mongoclass.
 
-    def decorator(cls: Type[Any]) -> Type[MongoclassInstance]:
+    Parameters:
+        db: A pymongo database object.
+        collection_name: The name of the collection to use.
+        indexes: A list of pymongo `IndexModel` objects.
+        **dataclass_kwargs: Keyword arguments to pass to the `dataclass` decorator.
+
+    Raises:
+        DeveloperError: If the class does not have an _id field.
+        DeveloperError: If the class is not a mongoclass and no database is specified.
+
+    Returns:
+        A decorator that converts a class into a mongoclass.
+    """
+    def wrap(cls: Type[Any]) -> Type[MongoclassInstance]:
         return _process_class(cls, db, collection_name, indexes, dataclass_kwargs)
 
-    return decorator
+    if cls is None:
+        return wrap
+
+    return wrap(cls)
 
 
 def _process_class(
     cls: Type[Any],
     db: Union[Database, AsyncIOMotorDatabase, None],
     collection_name: Optional[str],
-    indexes: List[IndexModel],
+    indexes: Optional[List[IndexModel]],
     dataclass_kwargs: Dict[str, Any],
 ) -> Type[MongoclassInstance]:
     if not is_dataclass(cls) or dataclass_kwargs:
@@ -97,6 +120,9 @@ def _process_class(
 
     else:
         raise DeveloperError("Must specify a database.")
+    
+    if indexes is None:
+        indexes = []
 
     id_field = None
     overrides = {}
@@ -202,7 +228,7 @@ def is_mongoclass(
 
 def to_document(obj: MongoclassInstance, /) -> Dict[str, Any]:
     """
-    Converts a dataclass instance to a dictionary.
+    Converts a mongoclass instance into a dictionary.
     """
     converter = get_converter(type(obj))
     return converter.unstructure(obj)
@@ -210,7 +236,7 @@ def to_document(obj: MongoclassInstance, /) -> Dict[str, Any]:
 
 def from_document(cls: Type[T], /, data: Dict[str, Any]) -> T:
     """
-    Attempts to create a dataclass instance from a dictionary.
+    Attempts to create a mongoclass instance from a dictionary.
     """
     converter = get_converter(cls)
     return converter.structure(data, cls)
@@ -222,9 +248,6 @@ def insert_one(obj: MongoclassInstance, /) -> InsertOneResult:
 
     Parameters:
         obj: A mongoclass instance.
-
-    Raises:
-        TypeError: If the object is not a mongoclass instance.
 
     Returns:
         A pymongo `InsertOneResult` object.
@@ -256,9 +279,6 @@ def update_one(obj: MongoclassInstance, update: Dict[str, Any], /) -> UpdateResu
         obj: A mongoclass instance.
         update: An update document.
 
-    Raises:
-        TypeError: If the object is not a mongoclass instance.
-
     Returns:
         A pymongo `UpdateResult` object.
     """
@@ -266,7 +286,9 @@ def update_one(obj: MongoclassInstance, update: Dict[str, Any], /) -> UpdateResu
     return collection.update_one(filter={"_id": get_id(obj)}, update=update)
 
 
-async def aupdate_one(obj: MongoclassInstance, update: Dict[str, Any], /) -> UpdateResult:
+async def aupdate_one(
+    obj: MongoclassInstance, update: Dict[str, Any], /
+) -> UpdateResult:
     collection = get_collection(obj)
     result = await collection.update_one(filter={"_id": get_id(obj)}, update=update)
     assert isinstance(result, UpdateResult)
@@ -284,9 +306,6 @@ def replace_one(obj: MongoclassInstance, /, upsert: bool = False) -> UpdateResul
         obj: A mongoclass instance.
         upsert: If True, will insert the document if it does not already exist.
 
-    Raises:
-        TypeError: If the object is not a mongoclass instance.
-
     Returns:
         A pymongo `UpdateResult` object.
     """
@@ -297,7 +316,9 @@ def replace_one(obj: MongoclassInstance, /, upsert: bool = False) -> UpdateResul
     )
 
 
-async def areplace_one(obj: MongoclassInstance, /, upsert: bool = False) -> UpdateResult:
+async def areplace_one(
+    obj: MongoclassInstance, /, upsert: bool = False
+) -> UpdateResult:
     document = to_document(obj)
     collection = get_collection(obj)
     result = await collection.replace_one(
@@ -316,9 +337,6 @@ def delete_one(obj: MongoclassInstance, /) -> DeleteResult:
 
     Parameters:
         obj: A mongoclass instance.
-
-    Raises:
-        TypeError: If the object is not a mongoclass instance.
 
     Returns:
         A pymongo `DeleteResult` object.
@@ -344,9 +362,6 @@ def find_one(cls: Type[T], /, filter: Optional[Dict[str, Any]] = None) -> Option
     Parameters:
         cls: A mongoclass type.
         filter: A dictionary specifying the query to be performed.
-
-    Raises:
-        TypeError: If the class is not a mongoclass.
 
     Returns:
         A mongoclass instance or None.
@@ -390,9 +405,6 @@ def find(
         sort: A list of fields to sort by. If a field is prepended with a negative \
             sign it will be sorted in descending order. Otherwise ascending.
 
-    Raises:
-        TypeError: If the class is not a Mongoclass type.
-
     Returns:
         A `Cursor` object if the mongoclass's collection is synchronous or an \
             `AsyncCursor` object if the collection is asynchronous.
@@ -417,7 +429,7 @@ def create_indexes(cls: Type[MongoclassInstance], /) -> List[str]:
 
     Parameters:
         cls: A mongoclass.
-    
+
     Returns:
         A list of index names.
     """

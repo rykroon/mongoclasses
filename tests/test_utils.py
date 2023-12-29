@@ -74,7 +74,7 @@ def test_mongoclass_inherit_database(database):
     class Foo:
         _id: ObjectId = dc.field(default_factory=ObjectId)
 
-    @mongoclass()
+    @mongoclass
     class Bar(Foo):
         pass
 
