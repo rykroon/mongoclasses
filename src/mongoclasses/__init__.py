@@ -51,6 +51,9 @@ T = TypeVar("T", bound=MongoclassInstance)
 
 
 class DeveloperError(Exception):
+    """
+    This exception is raised when the developer has made a mistake.
+    """
     pass
 
 
@@ -200,6 +203,9 @@ def set_id(obj: MongoclassInstance, /, value: Any) -> None:
 def get_collection(
     obj: Union[Type[MongoclassInstance], MongoclassInstance], /
 ) -> Union[Collection, AsyncIOMotorCollection]:
+    """
+    Returns the collection associated with the mongoclass.
+    """
     try:
         config = obj.__mongoclass_config__
     except AttributeError:
@@ -211,6 +217,9 @@ def get_collection(
 def get_converter(
     obj: Union[Type[MongoclassInstance], MongoclassInstance], /
 ) -> cattrs.Converter:
+    """
+    Returns the converter associated with the mongoclass.
+    """
     try:
         config = obj.__mongoclass_config__
     except AttributeError:
@@ -222,6 +231,9 @@ def get_converter(
 def is_mongoclass(
     obj: Any, /
 ) -> TypeGuard[Union[Type[MongoclassInstance], MongoclassInstance]]:
+    """
+    Returns True if the object is a mongoclass.
+    """
     cls = obj if isinstance(obj, type) else type(obj)
     return hasattr(cls, "__mongoclass_config__")
 
@@ -236,7 +248,7 @@ def to_document(obj: MongoclassInstance, /) -> Dict[str, Any]:
 
 def from_document(cls: Type[T], /, data: Dict[str, Any]) -> T:
     """
-    Attempts to create a mongoclass instance from a dictionary.
+    Converts a dictionary into a mongoclass instance.
     """
     converter = get_converter(cls)
     return converter.structure(data, cls)
@@ -395,19 +407,17 @@ def find(
     sort: Optional[List[Tuple[str, Literal[-1, 1]]]] = None,
 ) -> Union[Cursor, AsyncIOMotorCursor]:
     """
-    Performs a query on the mongoclass.
+    Performs a query on the collection associated with the mongoclass.
 
     Parameters:
         cls: A mongoclass.
-        filter: A dictionary specifying the query to be performed.
+        filter: A query document that selects which documents to include in the result set.
         skip: The number of documents to omit from the start of the result set.
         limit: The maximum number of results to return.
-        sort: A list of fields to sort by. If a field is prepended with a negative \
-            sign it will be sorted in descending order. Otherwise ascending.
+        sort: A list of (key, direction) pairs.
 
     Returns:
-        A `Cursor` object if the mongoclass's collection is synchronous or an \
-            `AsyncCursor` object if the collection is asynchronous.
+        A MongoDB cursor.
     """
     collection = get_collection(cls)
     return collection.find(filter=filter, skip=skip, limit=limit, sort=sort)
