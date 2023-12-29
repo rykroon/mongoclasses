@@ -13,13 +13,14 @@ from mongoclasses import (
     _get_field_name,
     mongoclass,
     is_mongoclass,
-    FieldMeta,
     get_id,
     set_id,
     get_collection,
     get_converter,
     to_document,
     from_document,
+    DeveloperError,
+    FieldMeta,
 )
 
 
@@ -61,13 +62,32 @@ def test_mongoclass(database):
     assert is_mongoclass(Foo)
 
 
+def test_mongoclass_missing_db():
+    with pytest.raises(DeveloperError):
+        @mongoclass()
+        class Foo:
+            pass
+
+
+def test_mongoclass_inherit_database(database):
+    @mongoclass(db=database)
+    class Foo:
+        _id: ObjectId = dc.field(default_factory=ObjectId)
+
+    @mongoclass()
+    class Bar(Foo):
+        pass
+
+    assert Bar.__mongoclass_config__.collection.name == "foo.bar"
+
+
 def test_mongoclass_missing_id_field(database):
-    with pytest.raises(TypeError):
+    with pytest.raises(DeveloperError):
         @mongoclass(db=database)
         class Foo:
             pass
 
-    with pytest.raises(TypeError):
+    with pytest.raises(DeveloperError):
         @mongoclass(db=database)
         class Foo:
             _id: Annotated[int, FieldMeta(db_field="not_id")] = 0

@@ -49,6 +49,10 @@ class MongoclassInstance(DataclassInstance):
 T = TypeVar("T", bound=MongoclassInstance)
 
 
+class DeveloperError(Exception):
+    pass
+
+
 @dataclass(frozen=True)
 class FieldMeta:
     db_field: Optional[str] = None
@@ -57,7 +61,7 @@ class FieldMeta:
 
 def mongoclass(
     *,
-    db: Union[Database, AsyncIOMotorDatabase],
+    db: Union[Database, AsyncIOMotorDatabase, None] = None,
     collection_name: Optional[str] = None,
     indexes: Optional[List[IndexModel]] = None,
     **dataclass_kwargs: Any,
@@ -73,7 +77,7 @@ def mongoclass(
 
 def _process_class(
     cls: Type[Any],
-    db: Union[Database, AsyncIOMotorDatabase],
+    db: Union[Database, AsyncIOMotorDatabase, None],
     collection_name: Optional[str],
     indexes: List[IndexModel],
     dataclass_kwargs: Dict[str, Any],
@@ -84,7 +88,15 @@ def _process_class(
     if collection_name is None:
         collection_name = cls.__name__.lower()
 
-    collection = db[collection_name]
+    if db is not None:
+        collection = db[collection_name]
+
+    elif is_mongoclass(cls):
+        parent_collection = get_collection(cls)
+        collection = parent_collection[collection_name]
+
+    else:
+        raise DeveloperError("Must specify a database.")
 
     id_field = None
     overrides = {}
@@ -102,7 +114,7 @@ def _process_class(
             indexes.append(IndexModel(field_name, unique=True))
 
     if id_field is None:
-        raise TypeError(f"Class {cls} has no _id field")
+        raise DeveloperError(f"Class {cls} has no _id field")
 
     converter = make_converter()
     if overrides:
@@ -204,7 +216,7 @@ def from_document(cls: Type[T], /, data: Dict[str, Any]) -> T:
     return converter.structure(data, cls)
 
 
-def insert_one(obj: T, /) -> InsertOneResult:
+def insert_one(obj: MongoclassInstance, /) -> InsertOneResult:
     """
     Inserts the object into the database.
 
@@ -224,7 +236,7 @@ def insert_one(obj: T, /) -> InsertOneResult:
     return result
 
 
-async def ainsert_one(obj: T, /) -> InsertOneResult:
+async def ainsert_one(obj: MongoclassInstance, /) -> InsertOneResult:
     document = to_document(obj)
     collection = get_collection(obj)
     result = await collection.insert_one(document)
@@ -236,7 +248,7 @@ async def ainsert_one(obj: T, /) -> InsertOneResult:
 ainsert_one.__doc__ = insert_one.__doc__
 
 
-def update_one(obj: T, update: Dict[str, Any], /) -> UpdateResult:
+def update_one(obj: MongoclassInstance, update: Dict[str, Any], /) -> UpdateResult:
     """
     Updates the object in the database.
 
@@ -254,7 +266,7 @@ def update_one(obj: T, update: Dict[str, Any], /) -> UpdateResult:
     return collection.update_one(filter={"_id": get_id(obj)}, update=update)
 
 
-async def aupdate_one(obj: T, update: Dict[str, Any], /) -> UpdateResult:
+async def aupdate_one(obj: MongoclassInstance, update: Dict[str, Any], /) -> UpdateResult:
     collection = get_collection(obj)
     result = await collection.update_one(filter={"_id": get_id(obj)}, update=update)
     assert isinstance(result, UpdateResult)
@@ -264,7 +276,7 @@ async def aupdate_one(obj: T, update: Dict[str, Any], /) -> UpdateResult:
 aupdate_one.__doc__ = update_one.__doc__
 
 
-def replace_one(obj: T, /, upsert: bool = False) -> UpdateResult:
+def replace_one(obj: MongoclassInstance, /, upsert: bool = False) -> UpdateResult:
     """
     Replaces the object in the database.
 
@@ -285,7 +297,7 @@ def replace_one(obj: T, /, upsert: bool = False) -> UpdateResult:
     )
 
 
-async def areplace_one(obj: T, /, upsert: bool = False) -> UpdateResult:
+async def areplace_one(obj: MongoclassInstance, /, upsert: bool = False) -> UpdateResult:
     document = to_document(obj)
     collection = get_collection(obj)
     result = await collection.replace_one(
@@ -298,7 +310,7 @@ async def areplace_one(obj: T, /, upsert: bool = False) -> UpdateResult:
 areplace_one.__doc__ = replace_one.__doc__
 
 
-def delete_one(obj: T, /) -> DeleteResult:
+def delete_one(obj: MongoclassInstance, /) -> DeleteResult:
     """
     Deletes the object from the database.
 
@@ -315,7 +327,7 @@ def delete_one(obj: T, /) -> DeleteResult:
     return collection.delete_one({"_id": get_id(obj)})
 
 
-async def adelete_one(obj: T, /) -> DeleteResult:
+async def adelete_one(obj: MongoclassInstance, /) -> DeleteResult:
     collection = get_collection(obj)
     result = await collection.delete_one({"_id": get_id(obj)})
     assert isinstance(result, DeleteResult)
@@ -360,7 +372,7 @@ afind_one.__doc__ = find_one.__doc__
 
 
 def find(
-    cls: Type[T],
+    cls: Type[MongoclassInstance],
     /,
     filter: Optional[Dict[str, Any]] = None,
     skip: int = 0,
@@ -399,7 +411,7 @@ async def aiter_objects(cls: Type[T], cursor: AsyncIOMotorCursor) -> Iterable[T]
         yield from_document(cls, document)
 
 
-def create_indexes(cls: Type[T], /) -> List[str]:
+def create_indexes(cls: Type[MongoclassInstance], /) -> List[str]:
     """
     Creates the indexes specified by the mongoclass.
 
@@ -413,7 +425,7 @@ def create_indexes(cls: Type[T], /) -> List[str]:
     return collection.create_indexes(list(cls.__mongoclass_config__.indexes))
 
 
-async def acreate_indexes(cls: Type[T], /) -> List[str]:
+async def acreate_indexes(cls: Type[MongoclassInstance], /) -> List[str]:
     collection = get_collection(cls)
     return await collection.create_indexes(list(cls.__mongoclass_config__.indexes))
 
