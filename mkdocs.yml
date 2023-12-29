@@ -41,6 +41,10 @@ nav:
     - Operations: api/operations.md
 
 
+watch:
+  - src/mongoclasses
+
+
 markdown_extensions:
   - admonition
 
@@ -52,5 +56,3 @@ plugins:
           show_root_heading: true
           separate_signature: true
           show_source: false
-    watch:
-    - src/mongoclasses
