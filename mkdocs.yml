@@ -37,8 +37,8 @@ repo_url: https://github.com/rykroon/mongoclasses/
 nav:
   - Introduction: index.md
   - API Reference:
-    - Mongoclass Functions: api/mongoclasses.md
-    - Collection Methods: api/sync_methods.md
+    - Utilities: api/utilities.md
+    - Operations: api/operations.md
 
 
 markdown_extensions:
